@@ -67,6 +67,38 @@ begin
 
   -- Promote both to super-admin.
   update app_users set is_super_admin = true where id in (admin1_id, admin2_id);
+
+  -- GoTrue requires a matching auth.identities row for every auth.users row
+  -- on email/password, otherwise sign-in fails with "Database error querying
+  -- schema". Normal signup creates these automatically; since we bypass the
+  -- API here, we have to create them ourselves.
+  insert into auth.identities (
+    id, user_id, provider_id, identity_data, provider,
+    last_sign_in_at, created_at, updated_at
+  )
+  values (
+    extensions.gen_random_uuid(),
+    admin1_id,
+    admin1_id::text,
+    jsonb_build_object('sub', admin1_id::text, 'email', 'admin1@example.com', 'email_verified', true),
+    'email',
+    now(), now(), now()
+  )
+  on conflict (provider_id, provider) do nothing;
+
+  insert into auth.identities (
+    id, user_id, provider_id, identity_data, provider,
+    last_sign_in_at, created_at, updated_at
+  )
+  values (
+    extensions.gen_random_uuid(),
+    admin2_id,
+    admin2_id::text,
+    jsonb_build_object('sub', admin2_id::text, 'email', 'admin2@example.com', 'email_verified', true),
+    'email',
+    now(), now(), now()
+  )
+  on conflict (provider_id, provider) do nothing;
 end;
 $$;
 

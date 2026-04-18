@@ -28,23 +28,37 @@ on conflict (id) do update set is_super_admin = true;
 
 ## If no one can sign in at all
 
-Create a new `auth.users` row directly (bypasses the signup UI):
+Create a new `auth.users` row directly (bypasses the signup UI). You must
+ALSO create a matching `auth.identities` row — GoTrue rejects sign-in
+attempts for any user without one, with "Database error querying schema":
 
 ```sql
-insert into auth.users (
-  id, instance_id, email, encrypted_password, email_confirmed_at,
-  aud, role, raw_app_meta_data, created_at, updated_at
-) values (
-  gen_random_uuid(),
-  '00000000-0000-0000-0000-000000000000',
-  'recovery@example.com',
-  extensions.crypt('CHANGE_ME_IMMEDIATELY', extensions.gen_salt('bf')),
-  now(),
-  'authenticated',
-  'authenticated',
-  '{"provider":"email","providers":["email"]}'::jsonb,
-  now(), now()
-);
+with new_user as (
+  insert into auth.users (
+    id, instance_id, email, encrypted_password, email_confirmed_at,
+    aud, role, raw_app_meta_data, created_at, updated_at
+  ) values (
+    gen_random_uuid(),
+    '00000000-0000-0000-0000-000000000000',
+    'recovery@example.com',
+    extensions.crypt('CHANGE_ME_IMMEDIATELY', extensions.gen_salt('bf')),
+    now(),
+    'authenticated',
+    'authenticated',
+    '{"provider":"email","providers":["email"]}'::jsonb,
+    now(), now()
+  )
+  returning id, email
+)
+insert into auth.identities (
+  id, user_id, provider_id, identity_data, provider,
+  last_sign_in_at, created_at, updated_at
+)
+select
+  gen_random_uuid(), id, id::text,
+  jsonb_build_object('sub', id::text, 'email', email, 'email_verified', true),
+  'email', now(), now(), now()
+from new_user;
 ```
 
 Then promote that user with the query above. **Rotate the password
