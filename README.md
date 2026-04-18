@@ -52,10 +52,33 @@ The app enforces a minimum of two super-admins; see
 npm run dev              # Next.js dev server
 npm run build            # production build
 npm run lint             # eslint
+npm run e2e              # run Playwright tests (needs browsers installed, see below)
+npm run e2e:install      # one-time: install Chromium for Playwright
 npx supabase status      # show local stack URLs + keys
 npx supabase db reset    # drop and recreate local DB, reapply migrations + seed
 npx supabase migration new <name>   # create a new timestamped migration
 ```
+
+## End-to-end tests
+
+The Phase 0 happy path (signup → apply with invite → admin approves →
+team page) lives in `e2e/phase0.spec.ts`.
+
+```bash
+# One-time: install Chromium
+npm run e2e:install
+
+# Make sure the local Supabase stack is running and seeded
+npx supabase start
+
+# Then run the test. Playwright will start the Next.js dev server
+# automatically via playwright.config.ts.
+npm run e2e
+```
+
+The test uses a unique `guardian+<timestamp>@example.com` each run, so it
+can be re-run without resetting the DB. If the test gets stuck in a weird
+state (rare), `npx supabase db reset` restores the seeded baseline.
 
 ## Deploying (later)
 
