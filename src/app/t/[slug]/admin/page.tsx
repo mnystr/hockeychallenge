@@ -21,7 +21,7 @@ export default async function TeamAdminDashboard({
   }
 
   const supabase = await createClient();
-  const [pendingCount, activeInvites] = await Promise.all([
+  const [pendingCount, activeInvites, challengeCount] = await Promise.all([
     supabase
       .from("memberships")
       .select("id", { count: "exact", head: true })
@@ -33,6 +33,10 @@ export default async function TeamAdminDashboard({
       .select("id", { count: "exact", head: true })
       .eq("team_id", ctx.teamId)
       .is("revoked_at", null),
+    supabase
+      .from("challenge_audience")
+      .select("challenge_id", { count: "exact", head: true })
+      .eq("team_id", ctx.teamId),
   ]);
 
   return (
@@ -59,6 +63,15 @@ export default async function TeamAdminDashboard({
           <div className="font-semibold">Invites</div>
           <div className="mt-1 text-sm text-gray-500">
             {activeInvites.count ?? 0} active
+          </div>
+        </Link>
+        <Link
+          href={`/t/${slug}/admin/challenges`}
+          className="rounded-md border border-gray-200 p-4 hover:bg-gray-50"
+        >
+          <div className="font-semibold">Challenges</div>
+          <div className="mt-1 text-sm text-gray-500">
+            {challengeCount.count ?? 0} total
           </div>
         </Link>
       </div>
