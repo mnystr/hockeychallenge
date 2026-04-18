@@ -28,20 +28,27 @@ export async function updateChallenge(
   formData: FormData,
 ): Promise<UpdateChallengeFormState> {
   await requireTeamAdmin(slug);
+  // Conditionally-rendered fields come through as null; normalise so the
+  // zod string schemas don't reject them silently.
+  const s = (k: string) => (formData.get(k) ?? "").toString();
   const parsed = updateChallengeSchema.safeParse({
-    title: formData.get("title"),
-    description_md: formData.get("description_md") ?? "",
-    completion_points: formData.get("completion_points"),
-    completion_mode: formData.get("completion_mode"),
-    required_task_count: formData.get("required_task_count"),
-    publish_at: formData.get("publish_at"),
-    starts_at: formData.get("starts_at"),
-    ends_at: formData.get("ends_at"),
-    recurrence: formData.get("recurrence"),
+    title: s("title"),
+    description_md: s("description_md"),
+    completion_points: s("completion_points"),
+    completion_mode: s("completion_mode"),
+    required_task_count: s("required_task_count"),
+    publish_at: s("publish_at"),
+    starts_at: s("starts_at"),
+    ends_at: s("ends_at"),
+    recurrence: s("recurrence"),
   });
 
   if (!parsed.success) {
-    return { errors: parsed.error.flatten().fieldErrors };
+    const fieldErrors = parsed.error.flatten().fieldErrors;
+    const firstMessage =
+      Object.values(fieldErrors).flat().find((v): v is string => Boolean(v)) ??
+      "Please fix the errors and try again.";
+    return { errors: fieldErrors, message: firstMessage };
   }
 
   const supabase = await createClient();
@@ -117,11 +124,12 @@ export async function createTask(
   formData: FormData,
 ): Promise<TaskFormState> {
   await requireTeamAdmin(slug);
+  const s = (k: string) => (formData.get(k) ?? "").toString();
   const parsed = taskSchema.safeParse({
-    title: formData.get("title"),
-    description_md: formData.get("description_md") ?? "",
-    points: formData.get("points"),
-    target_count: formData.get("target_count"),
+    title: s("title"),
+    description_md: s("description_md"),
+    points: s("points"),
+    target_count: s("target_count"),
   });
 
   if (!parsed.success) {
@@ -161,11 +169,12 @@ export async function updateTask(
   formData: FormData,
 ): Promise<TaskFormState> {
   await requireTeamAdmin(slug);
+  const s = (k: string) => (formData.get(k) ?? "").toString();
   const parsed = taskSchema.safeParse({
-    title: formData.get("title"),
-    description_md: formData.get("description_md") ?? "",
-    points: formData.get("points"),
-    target_count: formData.get("target_count"),
+    title: s("title"),
+    description_md: s("description_md"),
+    points: s("points"),
+    target_count: s("target_count"),
   });
 
   if (!parsed.success) {

@@ -10,14 +10,15 @@ import {
 } from "@/lib/auth/schemas-leaderboards";
 
 function parseForm(formData: FormData) {
+  const s = (k: string) => (formData.get(k) ?? "").toString();
   return leaderboardSchema.safeParse({
-    name: formData.get("name"),
-    description: formData.get("description") ?? "",
-    kind: formData.get("kind"),
-    sort_order: formData.get("sort_order"),
-    unit: formData.get("unit"),
-    starts_at: formData.get("starts_at"),
-    ends_at: formData.get("ends_at"),
+    name: s("name"),
+    description: s("description"),
+    kind: s("kind"),
+    sort_order: s("sort_order"),
+    unit: s("unit"),
+    starts_at: s("starts_at"),
+    ends_at: s("ends_at"),
   });
 }
 
