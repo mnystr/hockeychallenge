@@ -7,8 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "e2e": "playwright test",
-    "e2e:install": "playwright install chromium"
+    "e2e": "npx playwright test",
+    "e2e:install": "npx playwright install chromium"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
