@@ -21,23 +21,29 @@ export default async function TeamAdminDashboard({
   }
 
   const supabase = await createClient();
-  const [pendingCount, activeInvites, challengeCount] = await Promise.all([
-    supabase
-      .from("memberships")
-      .select("id", { count: "exact", head: true })
-      .eq("team_id", ctx.teamId)
-      .eq("status", "pending")
-      .is("deleted_at", null),
-    supabase
-      .from("team_invites")
-      .select("id", { count: "exact", head: true })
-      .eq("team_id", ctx.teamId)
-      .is("revoked_at", null),
-    supabase
-      .from("challenge_audience")
-      .select("challenge_id", { count: "exact", head: true })
-      .eq("team_id", ctx.teamId),
-  ]);
+  const [pendingCount, activeInvites, challengeCount, leaderboardCount] =
+    await Promise.all([
+      supabase
+        .from("memberships")
+        .select("id", { count: "exact", head: true })
+        .eq("team_id", ctx.teamId)
+        .eq("status", "pending")
+        .is("deleted_at", null),
+      supabase
+        .from("team_invites")
+        .select("id", { count: "exact", head: true })
+        .eq("team_id", ctx.teamId)
+        .is("revoked_at", null),
+      supabase
+        .from("challenge_audience")
+        .select("challenge_id", { count: "exact", head: true })
+        .eq("team_id", ctx.teamId),
+      supabase
+        .from("leaderboards")
+        .select("id", { count: "exact", head: true })
+        .eq("team_id", ctx.teamId)
+        .is("deleted_at", null),
+    ]);
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-10">
@@ -72,6 +78,15 @@ export default async function TeamAdminDashboard({
           <div className="font-semibold">Challenges</div>
           <div className="mt-1 text-sm text-gray-500">
             {challengeCount.count ?? 0} total
+          </div>
+        </Link>
+        <Link
+          href={`/t/${slug}/admin/leaderboards`}
+          className="rounded-md border border-gray-200 p-4 hover:bg-gray-50"
+        >
+          <div className="font-semibold">Leaderboards</div>
+          <div className="mt-1 text-sm text-gray-500">
+            {leaderboardCount.count ?? 0} total
           </div>
         </Link>
       </div>

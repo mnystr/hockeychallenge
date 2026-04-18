@@ -80,6 +80,15 @@ export default async function TeamPage({
             Log progress and complete tasks.
           </div>
         </Link>
+        <Link
+          href={`/t/${slug}/leaderboards`}
+          className="rounded-md border border-gray-200 p-4 hover:bg-gray-50"
+        >
+          <div className="font-semibold">Leaderboards</div>
+          <div className="mt-1 text-sm text-gray-500">
+            See where you stand.
+          </div>
+        </Link>
       </nav>
 
       <form action="/logout" method="post" className="mt-10">
