@@ -8,7 +8,7 @@ A website where youth hockey teams run off-season training challenges and leader
 
 | Layer | Choice | Why |
 |---|---|---|
-| Framework | **Next.js 15 (App Router, TypeScript)** | One codebase for UI + API, server components, huge ecosystem. |
+| Framework | **Next.js 16 (App Router, TypeScript)** | One codebase for UI + API, server components, huge ecosystem. |
 | Styling | **Tailwind CSS + shadcn/ui** | Fast, themable, accessible components out of the box. |
 | Backend + Auth + DB | **Supabase** (Postgres, Auth, Storage, Realtime) | Google OAuth + email/password with zero backend code. Row-Level Security enforces roles at the DB. Free tier covers this app easily. |
 | Rich text (challenge instructions) | **Markdown** (react-markdown + GFM) for MVP; revisit Tiptap later | Markdown gets us embedded images and formatting in a day. Tiptap adds an editor, sanitization, and Storage-integrated uploads — worth doing, but not worth blocking the MVP on. |
