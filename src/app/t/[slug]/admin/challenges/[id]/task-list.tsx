@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useId, useState } from "react";
 import { createTask, updateTask, deleteTask } from "../actions";
 import type { TaskFormState } from "@/lib/auth/schemas-challenges";
 
@@ -145,6 +145,7 @@ function TaskFields({
   state: TaskFormState;
   defaults?: Task;
 }) {
+  const descId = useId();
   return (
     <>
       <Field
@@ -155,11 +156,11 @@ function TaskFields({
         required
       />
       <div>
-        <label htmlFor="description_md" className="mb-1 block text-xs font-medium text-gray-700">
+        <label htmlFor={descId} className="mb-1 block text-xs font-medium text-gray-700">
           Description (Markdown, optional)
         </label>
         <textarea
-          id="description_md"
+          id={descId}
           name="description_md"
           rows={3}
           defaultValue={defaults?.description_md ?? ""}
@@ -209,13 +210,14 @@ function Field({
   required?: boolean;
   min?: number;
 }) {
+  const id = useId();
   return (
     <div>
-      <label htmlFor={name} className="mb-1 block text-xs font-medium text-gray-700">
+      <label htmlFor={id} className="mb-1 block text-xs font-medium text-gray-700">
         {label}
       </label>
       <input
-        id={name}
+        id={id}
         name={name}
         type={type}
         defaultValue={defaultValue}
