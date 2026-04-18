@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
@@ -11,23 +12,69 @@ export default async function TeamPage({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  // RLS ensures the user can only see teams they're a member of.
   const { data: team } = await supabase
     .from("teams")
-    .select("id, name, slug")
+    .select("id, name, slug, status")
     .eq("slug", slug)
     .is("deleted_at", null)
     .maybeSingle();
-
   if (!team) notFound();
+
+  const [{ data: appUser }, { data: membership }] = await Promise.all([
+    supabase
+      .from("app_users")
+      .select("is_super_admin")
+      .eq("id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("memberships")
+      .select("role, status")
+      .eq("user_id", user.id)
+      .eq("team_id", team.id)
+      .is("deleted_at", null)
+      .maybeSingle(),
+  ]);
+
+  const isSuperAdmin = appUser?.is_super_admin ?? false;
+  const isTeamAdmin =
+    membership?.role === "team_admin" && membership?.status === "active";
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-10">
-      <h1 className="text-3xl font-bold">{team.name}</h1>
-      <p className="mt-2 text-sm text-gray-500">
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">{team.name}</h1>
+          {team.status === "orphaned" && (
+            <p className="mt-1 text-sm text-amber-600">
+              This team has no active admin.
+            </p>
+          )}
+        </div>
+        <div className="flex gap-2">
+          {isSuperAdmin && (
+            <Link
+              href="/admin"
+              className="rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50"
+            >
+              Super-admin
+            </Link>
+          )}
+          {(isTeamAdmin || isSuperAdmin) && (
+            <Link
+              href={`/t/${slug}/admin`}
+              className="rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50"
+            >
+              Admin
+            </Link>
+          )}
+        </div>
+      </div>
+
+      <p className="text-sm text-gray-500">
         Team home placeholder — challenges and leaderboards land here in Phase 1.
       </p>
-      <form action="/logout" method="post" className="mt-8">
+
+      <form action="/logout" method="post" className="mt-10">
         <button
           type="submit"
           className="text-sm text-gray-500 hover:text-gray-700 hover:underline"

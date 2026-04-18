@@ -91,14 +91,22 @@ begin
   end if;
 
   -- Give admin1 a team_admin membership so the team isn't orphaned.
-  insert into memberships (user_id, team_id, role, status, approved_by, approved_at)
-  values (admin1_id, v_team_id, 'team_admin', 'active', admin1_id, now())
-  on conflict (user_id, team_id) do nothing;
+  if not exists (
+    select 1 from memberships
+    where user_id = admin1_id and team_id = v_team_id and deleted_at is null
+  ) then
+    insert into memberships (user_id, team_id, role, status, approved_by, approved_at)
+    values (admin1_id, v_team_id, 'team_admin', 'active', admin1_id, now());
+  end if;
 
   -- Profile for admin1 on the demo team, pre-approved.
-  insert into profiles (user_id, team_id, display_name, visibility, approved)
-  values (admin1_id, v_team_id, 'Coach One', 'full', true)
-  on conflict (user_id, team_id) do nothing;
+  if not exists (
+    select 1 from profiles
+    where user_id = admin1_id and team_id = v_team_id and deleted_at is null
+  ) then
+    insert into profiles (user_id, team_id, display_name, visibility, approved)
+    values (admin1_id, v_team_id, 'Coach One', 'full', true);
+  end if;
 
   -- Open invite.
   insert into team_invites (team_id, code, created_by, max_uses)
