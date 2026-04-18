@@ -21,13 +21,39 @@ export default async function ApprovalsPage({
   }
 
   const supabase = await createClient();
+
+  // Two queries: there's no direct FK between memberships and profiles (they
+  // both FK to users and teams separately), so PostgREST can't embed a join.
   const { data: pending } = await supabase
     .from("memberships")
-    .select("id, user_id, created_at, profiles(display_name, jersey_number, pronouns)")
+    .select("id, user_id, created_at")
     .eq("team_id", ctx.teamId)
     .eq("status", "pending")
     .is("deleted_at", null)
     .order("created_at", { ascending: true });
+
+  const userIds = (pending ?? []).map((m) => m.user_id);
+  const profilesByUser = new Map<
+    string,
+    { display_name: string; jersey_number: number | null; pronouns: string | null }
+  >();
+
+  if (userIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("user_id, display_name, jersey_number, pronouns")
+      .eq("team_id", ctx.teamId)
+      .in("user_id", userIds)
+      .is("deleted_at", null);
+
+    for (const p of profiles ?? []) {
+      profilesByUser.set(p.user_id, {
+        display_name: p.display_name,
+        jersey_number: p.jersey_number,
+        pronouns: p.pronouns,
+      });
+    }
+  }
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-10">
@@ -42,13 +68,7 @@ export default async function ApprovalsPage({
       {pending && pending.length > 0 ? (
         <ul className="space-y-3">
           {pending.map((m) => {
-            const profile = (
-              m.profiles as unknown as {
-                display_name: string;
-                jersey_number: number | null;
-                pronouns: string | null;
-              } | null
-            );
+            const profile = profilesByUser.get(m.user_id) ?? null;
             return (
               <li
                 key={m.id}
