@@ -36,7 +36,11 @@ attempts for any user without one, with "Database error querying schema":
 with new_user as (
   insert into auth.users (
     id, instance_id, email, encrypted_password, email_confirmed_at,
-    aud, role, raw_app_meta_data, created_at, updated_at
+    aud, role, raw_app_meta_data,
+    confirmation_token, recovery_token, email_change_token_new,
+    email_change_token_current, email_change, reauthentication_token,
+    phone_change, phone_change_token,
+    created_at, updated_at
   ) values (
     gen_random_uuid(),
     '00000000-0000-0000-0000-000000000000',
@@ -46,6 +50,7 @@ with new_user as (
     'authenticated',
     'authenticated',
     '{"provider":"email","providers":["email"]}'::jsonb,
+    '', '', '', '', '', '', '', '',
     now(), now()
   )
   returning id, email
@@ -60,6 +65,10 @@ select
   'email', now(), now(), now()
 from new_user;
 ```
+
+The `''` string defaults on the token columns are required — GoTrue
+2.188+ reads them into non-nullable Go strings and NULL values cause
+"Database error querying schema" on login.
 
 Then promote that user with the query above. **Rotate the password
 immediately** via the app's password-reset flow.

@@ -33,10 +33,15 @@ declare
   admin2_id uuid := '00000000-0000-0000-0000-000000000002';
   pw text := extensions.crypt('password123', extensions.gen_salt('bf'));
 begin
-  -- admin1
+  -- admin1. Token columns are set to '' explicitly because GoTrue 2.188+
+  -- reads them into non-nullable Go strings; NULLs raise "Database error
+  -- querying schema" on sign-in.
   insert into auth.users (
     id, instance_id, email, encrypted_password, email_confirmed_at,
     aud, role, raw_app_meta_data, raw_user_meta_data,
+    confirmation_token, recovery_token, email_change_token_new,
+    email_change_token_current, email_change, reauthentication_token,
+    phone_change, phone_change_token,
     created_at, updated_at
   )
   values (
@@ -45,6 +50,7 @@ begin
     'authenticated', 'authenticated',
     '{"provider":"email","providers":["email"]}'::jsonb,
     '{}'::jsonb,
+    '', '', '', '', '', '', '', '',
     now(), now()
   )
   on conflict (id) do nothing;
@@ -53,6 +59,9 @@ begin
   insert into auth.users (
     id, instance_id, email, encrypted_password, email_confirmed_at,
     aud, role, raw_app_meta_data, raw_user_meta_data,
+    confirmation_token, recovery_token, email_change_token_new,
+    email_change_token_current, email_change, reauthentication_token,
+    phone_change, phone_change_token,
     created_at, updated_at
   )
   values (
@@ -61,6 +70,7 @@ begin
     'authenticated', 'authenticated',
     '{"provider":"email","providers":["email"]}'::jsonb,
     '{}'::jsonb,
+    '', '', '', '', '', '', '', '',
     now(), now()
   )
   on conflict (id) do nothing;
