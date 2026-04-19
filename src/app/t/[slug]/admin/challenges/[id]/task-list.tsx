@@ -72,7 +72,7 @@ function TaskRow({
             }}
           >
             <button className="rounded-md border border-red-300 px-3 py-1 text-sm text-red-700 hover:bg-red-50">
-              Delete
+              Remove
             </button>
           </form>
         </div>
