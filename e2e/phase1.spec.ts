@@ -43,7 +43,7 @@ test("admin creates challenge + leaderboard → player completes → archive pre
   const challengeUrl = admin.url();
 
   // Fill in title and save.
-  await admin.getByLabel("Title").fill(challengeTitle);
+  await admin.getByLabel("Title", { exact: true }).fill(challengeTitle);
   await admin.getByRole("button", { name: "Save" }).click();
   await expect(admin.getByText("Saved.")).toBeVisible();
 
