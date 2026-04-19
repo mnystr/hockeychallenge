@@ -5,6 +5,7 @@ import {
   renderDisplayName,
   type Visibility,
 } from "@/lib/profiles/display-name";
+import { getT } from "@/lib/i18n/server";
 
 export default async function RosterPage({
   params,
@@ -45,8 +46,6 @@ export default async function RosterPage({
   const isAdmin =
     appUser?.is_super_admin === true || membership.role === "team_admin";
 
-  // RLS + profiles_self_read already enforces the correct visibility:
-  // non-admins only see approved profiles; admins see pending/approved.
   const { data: profiles } = await supabase
     .from("profiles")
     .select(
@@ -55,7 +54,6 @@ export default async function RosterPage({
     .eq("team_id", team.id)
     .is("deleted_at", null);
 
-  // Role info per member so we can badge team-admins.
   const { data: roleRows } = await supabase
     .from("memberships")
     .select("user_id, role, status")
@@ -66,21 +64,20 @@ export default async function RosterPage({
     roleByUser.set(r.user_id, { role: r.role, status: r.status });
   }
 
-  // For non-admins, filter to approved + active members only. Admins see
-  // everyone so they can cross-reference with the approvals queue.
   const visible = (profiles ?? []).filter((p) => {
     const m = roleByUser.get(p.user_id);
     if (isAdmin) return m?.status === "active";
     return p.approved && m?.status === "active";
   });
 
-  // Sort: team_admins first, then by display_name.
   visible.sort((a, b) => {
     const aAdmin = roleByUser.get(a.user_id)?.role === "team_admin";
     const bAdmin = roleByUser.get(b.user_id)?.role === "team_admin";
     if (aAdmin !== bAdmin) return aAdmin ? -1 : 1;
     return a.display_name.localeCompare(b.display_name);
   });
+
+  const t = await getT();
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-10">
@@ -90,13 +87,12 @@ export default async function RosterPage({
       >
         ← {team.name}
       </Link>
-      <h1 className="mb-6 text-3xl font-bold">Roster</h1>
+      <h1 className="mb-6 text-3xl font-bold">{t("roster.title")}</h1>
 
       {visible.length > 0 ? (
         <ul className="divide-y divide-gray-200 rounded-md border border-gray-200">
           {visible.map((p) => {
             const isYou = p.user_id === user.id;
-            // Admins and each row's owner see the raw display_name.
             const shown =
               isAdmin || isYou
                 ? p.display_name
@@ -112,19 +108,23 @@ export default async function RosterPage({
                 <div>
                   <div className="font-medium">
                     {shown}
-                    {isYou && <span className="ml-1 text-gray-500">(you)</span>}
+                    {isYou && (
+                      <span className="ml-1 text-gray-500">
+                        {t("leaderboards.you")}
+                      </span>
+                    )}
                     {role === "team_admin" && (
                       <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
-                        admin
+                        {t("roster.admin_badge")}
                       </span>
                     )}
                   </div>
                   <div className="mt-0.5 text-xs text-gray-500">
                     {p.jersey_number !== null
                       ? `#${p.jersey_number}`
-                      : "No jersey number"}
+                      : t("roster.no_jersey")}
                     {p.pronouns ? ` · ${p.pronouns}` : ""}
-                    {isAdmin && !p.approved && " · profile pending"}
+                    {isAdmin && !p.approved && ` · ${t("roster.profile_pending")}`}
                   </div>
                 </div>
               </li>
@@ -132,7 +132,7 @@ export default async function RosterPage({
           })}
         </ul>
       ) : (
-        <p className="text-sm text-gray-500">No active members yet.</p>
+        <p className="text-sm text-gray-500">{t("roster.empty")}</p>
       )}
     </main>
   );

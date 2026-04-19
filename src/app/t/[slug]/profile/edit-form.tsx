@@ -12,12 +12,29 @@ type Profile = {
   visibility: "full" | "first_name_only" | "initials";
 };
 
+type Strings = {
+  display_name_label: string;
+  display_name_hint: string;
+  jersey_label: string;
+  pronouns_label: string;
+  visibility_label: string;
+  visibility_full: string;
+  visibility_first: string;
+  visibility_initials: string;
+  visibility_hint: string;
+  submit: string;
+  submit_pending: string;
+  submitted_ok: string;
+};
+
 export default function ProfileEditForm({
   slug,
   profile,
+  strings,
 }: {
   slug: string;
   profile: Profile;
+  strings: Strings;
 }) {
   const bound = submitProfileChange.bind(null, slug, profile.id);
   const [state, action, pending] = useActionState<
@@ -29,16 +46,16 @@ export default function ProfileEditForm({
     <form action={action} className="space-y-4" noValidate>
       <Field
         name="display_name"
-        label="Display name"
+        label={strings.display_name_label}
         defaultValue={profile.display_name}
         errors={state?.errors?.display_name}
-        hint="How this player appears on rosters and leaderboards (subject to visibility setting)."
+        hint={strings.display_name_hint}
       />
 
       <div className="grid grid-cols-2 gap-3">
         <Field
           name="jersey_number"
-          label="Jersey number"
+          label={strings.jersey_label}
           type="number"
           min={0}
           max={999}
@@ -47,7 +64,7 @@ export default function ProfileEditForm({
         />
         <Field
           name="pronouns"
-          label="Pronouns"
+          label={strings.pronouns_label}
           defaultValue={profile.pronouns ?? ""}
           errors={state?.errors?.pronouns}
         />
@@ -55,7 +72,7 @@ export default function ProfileEditForm({
 
       <div>
         <label htmlFor="visibility" className="mb-1 block text-sm font-medium">
-          Visibility to teammates
+          {strings.visibility_label}
         </label>
         <select
           id="visibility"
@@ -63,18 +80,17 @@ export default function ProfileEditForm({
           defaultValue={profile.visibility}
           className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
-          <option value="full">Full name (e.g. Alex Nystrom)</option>
-          <option value="first_name_only">First name + initial (Alex N.)</option>
-          <option value="initials">Initials only (A.N.)</option>
+          <option value="full">{strings.visibility_full}</option>
+          <option value="first_name_only">{strings.visibility_first}</option>
+          <option value="initials">{strings.visibility_initials}</option>
         </select>
-        <p className="mt-1 text-xs text-gray-500">
-          Team admins always see the full display name.
-        </p>
+        <p className="mt-1 text-xs text-gray-500">{strings.visibility_hint}</p>
       </div>
 
       {state?.message && (
         <p
           className={`rounded-md px-3 py-2 text-sm ${
+            state.message === strings.submitted_ok ||
             state.message.startsWith("Submitted")
               ? "bg-green-50 text-green-700"
               : "bg-red-50 text-red-700"
@@ -89,7 +105,7 @@ export default function ProfileEditForm({
         disabled={pending}
         className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {pending ? "Submitting..." : "Submit changes for approval"}
+        {pending ? strings.submit_pending : strings.submit}
       </button>
     </form>
   );

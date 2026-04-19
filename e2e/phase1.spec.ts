@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { newEnContext } from "./helpers";
 
 /**
  * Phase 1 happy path.
@@ -27,7 +28,7 @@ test("admin creates challenge + leaderboard → player completes → archive pre
   const displayName = `Phase1 Kid ${nonce}`;
 
   // === Admin: create challenge, task, publish, create leaderboard ===
-  const adminCtx = await browser.newContext();
+  const adminCtx = await newEnContext(browser);
   const admin = await adminCtx.newPage();
 
   await admin.goto("/login");
@@ -68,7 +69,7 @@ test("admin creates challenge + leaderboard → player completes → archive pre
   const leaderboardId = leaderboardAdminUrl.split("/").pop()!;
 
   // === Guardian: sign up + apply ===
-  const guardianCtx = await browser.newContext();
+  const guardianCtx = await newEnContext(browser);
   const guardian = await guardianCtx.newPage();
   await guardian.goto("/login");
   await guardian.getByRole("button", { name: "Create one" }).click();

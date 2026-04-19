@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { newEnContext } from "./helpers";
 
 /**
  * Phase 0 happy path.
@@ -24,7 +25,7 @@ test("signup → apply → admin approves → team page", async ({ browser }) =>
   const displayName = `E2E Kid ${Date.now()}`;
 
   // === Guardian: sign up, apply to team ===
-  const guardianCtx = await browser.newContext();
+  const guardianCtx = await newEnContext(browser);
   const guardian = await guardianCtx.newPage();
 
   await guardian.goto("/login");
@@ -48,7 +49,7 @@ test("signup → apply → admin approves → team page", async ({ browser }) =>
   ).toBeVisible();
 
   // === Admin: sign in, approve the pending membership ===
-  const adminCtx = await browser.newContext();
+  const adminCtx = await newEnContext(browser);
   const admin = await adminCtx.newPage();
 
   await admin.goto("/login");

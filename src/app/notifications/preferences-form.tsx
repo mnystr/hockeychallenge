@@ -13,18 +13,32 @@ type Row = {
   in_app_leaderboard_passed: boolean;
 };
 
-export default function PreferencesForm({ rows }: { rows: Row[] }) {
+type Strings = {
+  empty: string;
+  save: string;
+  save_pending: string;
+  saved: string;
+  in_app_new_challenge: string;
+  email_new_challenge: string;
+  in_app_leaderboard_passed: string;
+  email_leaderboard_passed: string;
+  email_approval_needed: string;
+};
+
+export default function PreferencesForm({
+  rows,
+  strings,
+}: {
+  rows: Row[];
+  strings: Strings;
+}) {
   const [state, action, pending] = useActionState<
     { message?: string } | undefined,
     FormData
   >(updatePreferences, undefined);
 
   if (rows.length === 0) {
-    return (
-      <p className="text-sm text-gray-500">
-        Join a team to set notification preferences.
-      </p>
-    );
+    return <p className="text-sm text-gray-500">{strings.empty}</p>;
   }
 
   return (
@@ -38,27 +52,27 @@ export default function PreferencesForm({ rows }: { rows: Row[] }) {
           <div className="mt-2 grid gap-2 text-sm sm:grid-cols-2">
             <Checkbox
               name={`${r.teamId}__in_app_new_challenge`}
-              label="In-app: new challenge"
+              label={strings.in_app_new_challenge}
               defaultChecked={r.in_app_new_challenge}
             />
             <Checkbox
               name={`${r.teamId}__email_new_challenge`}
-              label="Email: new challenge"
+              label={strings.email_new_challenge}
               defaultChecked={r.email_new_challenge}
             />
             <Checkbox
               name={`${r.teamId}__in_app_leaderboard_passed`}
-              label="In-app: leaderboard passed"
+              label={strings.in_app_leaderboard_passed}
               defaultChecked={r.in_app_leaderboard_passed}
             />
             <Checkbox
               name={`${r.teamId}__email_leaderboard_passed`}
-              label="Email: leaderboard passed"
+              label={strings.email_leaderboard_passed}
               defaultChecked={r.email_leaderboard_passed}
             />
             <Checkbox
               name={`${r.teamId}__email_approval_needed`}
-              label="Email: approval needed (admins)"
+              label={strings.email_approval_needed}
               defaultChecked={r.email_approval_needed}
             />
           </div>
@@ -68,6 +82,7 @@ export default function PreferencesForm({ rows }: { rows: Row[] }) {
       {state?.message && (
         <p
           className={`rounded-md px-3 py-2 text-sm ${
+            state.message === strings.saved ||
             state.message === "Preferences saved."
               ? "bg-green-50 text-green-700"
               : "bg-red-50 text-red-700"
@@ -82,7 +97,7 @@ export default function PreferencesForm({ rows }: { rows: Row[] }) {
         disabled={pending}
         className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {pending ? "Saving..." : "Save preferences"}
+        {pending ? strings.save_pending : strings.save}
       </button>
     </form>
   );

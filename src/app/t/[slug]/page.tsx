@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getT } from "@/lib/i18n/server";
 import { setDefaultTeam } from "./actions";
 
 export default async function TeamPage({
@@ -54,6 +55,7 @@ export default async function TeamPage({
       slug: (m.teams as unknown as { slug: string }).slug,
     }));
   const isDefault = appUser?.default_team_id === team.id;
+  const t = await getT();
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-10">
@@ -66,20 +68,18 @@ export default async function TeamPage({
             {team.name}
           </h1>
           {team.status === "orphaned" && (
-            <p className="mt-1 text-sm text-amber-600">
-              This team has no active admin.
-            </p>
+            <p className="mt-1 text-sm text-amber-600">{t("team.orphaned")}</p>
           )}
           {otherTeams.length > 0 && (
             <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-600">
-              <span>Switch to:</span>
-              {otherTeams.map((t) => (
+              <span>{t("team.switch_to")}</span>
+              {otherTeams.map((o) => (
                 <Link
-                  key={t.id}
-                  href={`/t/${t.slug}`}
+                  key={o.id}
+                  href={`/t/${o.slug}`}
                   className="rounded-md border border-gray-300 px-2 py-0.5 hover:bg-gray-50"
                 >
-                  {t.name}
+                  {o.name}
                 </Link>
               ))}
               {!isDefault && membership && (
@@ -90,12 +90,12 @@ export default async function TeamPage({
                   }}
                 >
                   <button className="rounded-md border border-gray-300 px-2 py-0.5 hover:bg-gray-50">
-                    Set as default
+                    {t("team.set_default")}
                   </button>
                 </form>
               )}
               {isDefault && (
-                <span className="text-gray-400">· default</span>
+                <span className="text-gray-400">{t("team.default_tag")}</span>
               )}
             </div>
           )}
@@ -105,7 +105,7 @@ export default async function TeamPage({
             href="/notifications"
             className="relative rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50"
           >
-            Notifications
+            {t("nav.notifications")}
             {unreadCount > 0 && (
               <span className="ml-1 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-blue-600 px-1.5 text-xs font-medium text-white">
                 {unreadCount}
@@ -117,7 +117,7 @@ export default async function TeamPage({
               href="/admin"
               className="rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50"
             >
-              Super-admin
+              {t("nav.super_admin")}
             </Link>
           )}
           {(isTeamAdmin || isSuperAdmin) && (
@@ -125,7 +125,7 @@ export default async function TeamPage({
               href={`/t/${slug}/admin`}
               className="rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50"
             >
-              Admin
+              {t("nav.admin")}
             </Link>
           )}
         </div>
@@ -136,36 +136,36 @@ export default async function TeamPage({
           href={`/t/${slug}/challenges`}
           className="rounded-md border border-gray-200 p-4 hover:bg-gray-50"
         >
-          <div className="font-semibold">Challenges</div>
+          <div className="font-semibold">{t("nav.challenges")}</div>
           <div className="mt-1 text-sm text-gray-500">
-            Log progress and complete tasks.
+            {t("team.challenges_card")}
           </div>
         </Link>
         <Link
           href={`/t/${slug}/leaderboards`}
           className="rounded-md border border-gray-200 p-4 hover:bg-gray-50"
         >
-          <div className="font-semibold">Leaderboards</div>
+          <div className="font-semibold">{t("nav.leaderboards")}</div>
           <div className="mt-1 text-sm text-gray-500">
-            See where you stand.
+            {t("team.leaderboards_card")}
           </div>
         </Link>
         <Link
           href={`/t/${slug}/members`}
           className="rounded-md border border-gray-200 p-4 hover:bg-gray-50"
         >
-          <div className="font-semibold">Roster</div>
+          <div className="font-semibold">{t("nav.roster")}</div>
           <div className="mt-1 text-sm text-gray-500">
-            Who&apos;s on the team.
+            {t("team.roster_card")}
           </div>
         </Link>
         <Link
           href={`/t/${slug}/profile`}
           className="rounded-md border border-gray-200 p-4 hover:bg-gray-50"
         >
-          <div className="font-semibold">Profile</div>
+          <div className="font-semibold">{t("nav.profile")}</div>
           <div className="mt-1 text-sm text-gray-500">
-            Name, jersey number, visibility.
+            {t("team.profile_card")}
           </div>
         </Link>
       </nav>
@@ -175,7 +175,7 @@ export default async function TeamPage({
           type="submit"
           className="text-sm text-gray-500 hover:text-gray-700 hover:underline"
         >
-          Sign out
+          {t("common.sign_out")}
         </button>
       </form>
     </main>

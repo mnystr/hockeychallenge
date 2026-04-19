@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { createClient } from "@/lib/supabase/server";
+import { getT } from "@/lib/i18n/server";
 import TaskProgress from "./task-progress";
 
 export default async function ChallengeDetailPage({
@@ -67,38 +68,50 @@ export default async function ChallengeDetailPage({
   const hasEnded =
     challenge.ends_at && new Date(challenge.ends_at) < new Date();
 
+  const t = await getT();
+
+  const tpStrings = {
+    mark_done: t("challenges.mark_done"),
+    done: t("challenges.done"),
+    target_met: t("challenges.target_met"),
+    target_units: (target: number) =>
+      t("challenges.target_units", { target }),
+  };
+
   return (
     <main className="mx-auto max-w-2xl px-4 py-10">
       <Link
         href={`/t/${slug}/challenges`}
         className="mb-2 inline-block text-sm text-blue-600 hover:underline"
       >
-        ← Challenges
+        {t("challenges.back_to_challenges")}
       </Link>
       <h1 className="text-3xl font-bold">{challenge.title}</h1>
       <div className="mt-1 text-xs text-gray-500">
         {challenge.starts_at && (
-          <>Starts {new Date(challenge.starts_at).toLocaleDateString()} </>
+          <>{new Date(challenge.starts_at).toLocaleDateString()} </>
         )}
         {challenge.ends_at && (
-          <>· Ends {new Date(challenge.ends_at).toLocaleDateString()}</>
+          <>· {new Date(challenge.ends_at).toLocaleDateString()}</>
         )}
       </div>
 
       {completion && (
         <p className="mt-4 rounded-md bg-green-50 px-3 py-2 text-sm text-green-700">
-          Completed {new Date(completion.completed_at).toLocaleDateString()} ·{" "}
-          {completion.points_awarded} pts
+          {t("challenges.completed_banner", {
+            date: new Date(completion.completed_at).toLocaleDateString(),
+            points: completion.points_awarded,
+          })}
         </p>
       )}
       {startsPending && (
         <p className="mt-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-700">
-          This challenge hasn&apos;t started yet.
+          {t("challenges.started_not_yet")}
         </p>
       )}
       {hasEnded && !completion && (
         <p className="mt-4 rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-700">
-          This challenge has ended.
+          {t("challenges.ended")}
         </p>
       )}
 
@@ -111,33 +124,33 @@ export default async function ChallengeDetailPage({
       )}
 
       <h2 className="mt-8 mb-3 text-xl font-semibold">
-        Tasks{" "}
+        {t("challenges.tasks_title")}{" "}
         {challenge.completion_mode === "x_of_y" && (
           <span className="text-sm font-normal text-gray-500">
-            (complete {challenge.required_task_count} of {(tasks ?? []).length})
+            {t("challenges.tasks_x_of_y", {
+              required: challenge.required_task_count ?? 0,
+              total: (tasks ?? []).length,
+            })}
           </span>
         )}
       </h2>
       {tasks && tasks.length > 0 ? (
         <ul className="space-y-3">
-          {tasks.map((t) => (
-            <li
-              key={t.id}
-              className="rounded-md border border-gray-200 p-4"
-            >
+          {tasks.map((task) => (
+            <li key={task.id} className="rounded-md border border-gray-200 p-4">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
-                  <div className="font-medium">{t.title}</div>
-                  {t.description_md && (
+                  <div className="font-medium">{task.title}</div>
+                  {task.description_md && (
                     <div className="prose prose-sm mt-1 max-w-none text-gray-600">
                       <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {t.description_md}
+                        {task.description_md}
                       </ReactMarkdown>
                     </div>
                   )}
-                  {t.points !== null && (
+                  {task.points !== null && (
                     <div className="mt-1 text-xs text-gray-500">
-                      {t.points} pts when target met
+                      {t("challenges.points_per", { points: task.points })}
                     </div>
                   )}
                 </div>
@@ -146,17 +159,23 @@ export default async function ChallengeDetailPage({
                 <TaskProgress
                   slug={slug}
                   challengeId={id}
-                  taskId={t.id}
-                  currentCount={progressByTask.get(t.id) ?? 0}
-                  targetCount={t.target_count}
+                  taskId={task.id}
+                  currentCount={progressByTask.get(task.id) ?? 0}
+                  targetCount={task.target_count}
                   locked={!!(startsPending || hasEnded)}
+                  strings={{
+                    mark_done: tpStrings.mark_done,
+                    done: tpStrings.done,
+                    target_met: tpStrings.target_met,
+                    target_units: tpStrings.target_units(task.target_count),
+                  }}
                 />
               </div>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="text-sm text-gray-500">No tasks on this challenge yet.</p>
+        <p className="text-sm text-gray-500">{t("challenges.no_tasks")}</p>
       )}
     </main>
   );

@@ -2,14 +2,19 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getT } from "@/lib/i18n/server";
 
 export async function requestAccountDeletion(
   _state: { message?: string } | undefined,
   formData: FormData,
 ): Promise<{ message?: string } | undefined> {
   const confirmation = (formData.get("confirm") ?? "").toString().trim();
-  if (confirmation !== "DELETE") {
-    return { message: 'Type "DELETE" to confirm.' };
+  const t = await getT();
+  const expected = t("settings_data.delete_confirm_word");
+  // Accept both the locale-appropriate word and "DELETE" for safety if
+  // the user's locale cookie shifted between form render and submit.
+  if (confirmation !== expected && confirmation !== "DELETE") {
+    return { message: t("settings_data.delete_confirm_error") };
   }
 
   const supabase = await createClient();

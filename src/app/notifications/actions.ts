@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getT } from "@/lib/i18n/server";
 
 export async function markAllRead() {
   const supabase = await createClient();
@@ -79,5 +80,6 @@ export async function updatePreferences(
   }
 
   revalidatePath("/notifications");
-  return { message: "Preferences saved." };
+  const t = await getT();
+  return { message: t("notifications.prefs_saved") };
 }

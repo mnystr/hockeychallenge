@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { newEnContext } from "./helpers";
 
 /**
  * Phase 3 happy path.
@@ -22,7 +23,7 @@ test("Phase 3: notifications, trash, audit, data export", async ({ browser }) =>
   const taskTitle = `Phase3 task ${nonce}`;
 
   // === Admin setup ===
-  const adminCtx = await browser.newContext();
+  const adminCtx = await newEnContext(browser);
   const admin = await adminCtx.newPage();
   await admin.goto("/login");
   await admin.getByLabel("Email").fill("admin1@example.com");
@@ -31,7 +32,7 @@ test("Phase 3: notifications, trash, audit, data export", async ({ browser }) =>
   await admin.waitForURL("**/t/test-squad");
 
   // === Guardian: sign up + apply ===
-  const guardianCtx = await browser.newContext();
+  const guardianCtx = await newEnContext(browser);
   const guardian = await guardianCtx.newPage();
   await guardian.goto("/login");
   await guardian.getByRole("button", { name: "Create one" }).click();

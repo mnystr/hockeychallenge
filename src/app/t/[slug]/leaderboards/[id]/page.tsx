@@ -5,6 +5,7 @@ import {
   renderDisplayName,
   type Visibility,
 } from "@/lib/profiles/display-name";
+import { getT } from "@/lib/i18n/server";
 import StandaloneEntryForm from "./entry-form";
 
 type Row = {
@@ -113,20 +114,24 @@ export default async function LeaderboardDetailPage({
     }
   }
 
+  const t = await getT();
+
   return (
     <main className="mx-auto max-w-2xl px-4 py-10">
       <Link
         href={`/t/${slug}/leaderboards`}
         className="mb-2 inline-block text-sm text-blue-600 hover:underline"
       >
-        ← Leaderboards
+        ← {t("nav.leaderboards")}
       </Link>
       <h1 className="text-3xl font-bold">{board.name}</h1>
       <p className="mt-1 text-sm text-gray-500">
-        {board.kind === "points" ? "Points" : "Standalone"}
+        {board.kind === "points"
+          ? t("leaderboards.kind_points")
+          : t("leaderboards.kind_standalone")}
         {board.unit ? ` · ${board.unit}` : ""}
         {board.status === "archived"
-          ? ` · archived ${board.archived_at ? new Date(board.archived_at).toLocaleDateString() : ""}`
+          ? ` · ${t("leaderboards.archived", { date: board.archived_at ? new Date(board.archived_at).toLocaleDateString() : "" })}`
           : ""}
       </p>
       {board.description && (
@@ -135,24 +140,33 @@ export default async function LeaderboardDetailPage({
 
       {board.kind === "standalone" && board.status === "active" && (
         <section className="mt-6 rounded-md border border-gray-200 p-4">
-          <h2 className="mb-2 text-sm font-semibold">Your entry</h2>
+          <h2 className="mb-2 text-sm font-semibold">
+            {t("leaderboards.entry_title")}
+          </h2>
           <StandaloneEntryForm
             slug={slug}
             leaderboardId={id}
             unit={board.unit}
             currentValue={ownRow?.value ?? null}
+            strings={{
+              value_label: t("leaderboards.value_label"),
+              submit: t("leaderboards.entry_submit"),
+              update: t("leaderboards.entry_update"),
+              pending: t("leaderboards.entry_pending"),
+              saved: t("leaderboards.entry_saved"),
+            }}
           />
         </section>
       )}
 
       <section className="mt-8">
-        <h2 className="mb-3 text-lg font-semibold">Standings</h2>
+        <h2 className="mb-3 text-lg font-semibold">
+          {t("leaderboards.standings")}
+        </h2>
         {rows.length > 0 ? (
           <ol className="divide-y divide-gray-200 rounded-md border border-gray-200">
             {rows.map((r) => {
               const isYou = r.user_id === user.id;
-              // Admins and the row's owner see the raw display_name.
-              // Everyone else sees the visibility-rendered version.
               const shownName =
                 isAdmin || isYou
                   ? r.display_name
@@ -173,7 +187,7 @@ export default async function LeaderboardDetailPage({
                     </span>
                     <span className="font-medium">
                       {shownName}
-                      {isYou ? " (you)" : ""}
+                      {isYou ? ` ${t("leaderboards.you")}` : ""}
                     </span>
                   </div>
                   <span className="font-mono text-sm">
@@ -186,7 +200,9 @@ export default async function LeaderboardDetailPage({
           </ol>
         ) : (
           <p className="text-sm text-gray-500">
-            No one on the board yet{board.kind === "points" ? " — earn points by completing challenges." : " — be the first to enter a value."}
+            {board.kind === "points"
+              ? t("leaderboards.empty_points")
+              : t("leaderboards.empty_standalone")}
           </p>
         )}
       </section>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getT } from "@/lib/i18n/server";
 
 export default async function ChallengesListPage({
   params,
@@ -22,7 +23,6 @@ export default async function ChallengesListPage({
     .maybeSingle();
   if (!team) notFound();
 
-  // Must be a member of the team to see challenges.
   const { data: membership } = await supabase
     .from("memberships")
     .select("role, status")
@@ -34,7 +34,6 @@ export default async function ChallengesListPage({
     redirect(`/t/${slug}`);
   }
 
-  // Challenges in this team's audience. RLS filters publish_at and status.
   const { data: audienceRows } = await supabase
     .from("challenge_audience")
     .select("challenge_id")
@@ -60,6 +59,8 @@ export default async function ChallengesListPage({
     : { data: [] };
   const completedIds = new Set((completions ?? []).map((c) => c.challenge_id));
 
+  const t = await getT();
+
   return (
     <main className="mx-auto max-w-2xl px-4 py-10">
       <Link
@@ -68,7 +69,7 @@ export default async function ChallengesListPage({
       >
         ← {team.name}
       </Link>
-      <h1 className="mb-6 text-3xl font-bold">Challenges</h1>
+      <h1 className="mb-6 text-3xl font-bold">{t("challenges.list_title")}</h1>
 
       {challenges && challenges.length > 0 ? (
         <ul className="divide-y divide-gray-200 rounded-md border border-gray-200">
@@ -82,13 +83,14 @@ export default async function ChallengesListPage({
                   <div className="font-medium">{c.title}</div>
                   {c.ends_at && (
                     <div className="mt-0.5 text-xs text-gray-500">
-                      Ends {new Date(c.ends_at).toLocaleDateString()}
+                      {t("challenges.ends")}{" "}
+                      {new Date(c.ends_at).toLocaleDateString()}
                     </div>
                   )}
                 </div>
                 {completedIds.has(c.id) && (
                   <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">
-                    Complete
+                    {t("challenges.complete_badge")}
                   </span>
                 )}
               </Link>
@@ -96,7 +98,7 @@ export default async function ChallengesListPage({
           ))}
         </ul>
       ) : (
-        <p className="text-sm text-gray-500">No challenges yet.</p>
+        <p className="text-sm text-gray-500">{t("challenges.empty")}</p>
       )}
     </main>
   );

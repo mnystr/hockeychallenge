@@ -10,6 +10,7 @@ export default function TaskProgress({
   currentCount,
   targetCount,
   locked,
+  strings,
 }: {
   slug: string;
   challengeId: string;
@@ -17,6 +18,12 @@ export default function TaskProgress({
   currentCount: number;
   targetCount: number;
   locked: boolean;
+  strings: {
+    mark_done: string;
+    done: string;
+    target_met: string;
+    target_units: string;
+  };
 }) {
   const [count, setCount] = useState(currentCount);
   const [pending, startTransition] = useTransition();
@@ -34,7 +41,6 @@ export default function TaskProgress({
   };
 
   if (targetCount === 1) {
-    // Simple toggle — a "done" button for one-shot tasks.
     return (
       <button
         type="button"
@@ -46,12 +52,11 @@ export default function TaskProgress({
             : "bg-blue-600 text-white hover:bg-blue-700"
         } disabled:cursor-not-allowed disabled:opacity-60`}
       >
-        {met ? "Done ✓" : "Mark done"}
+        {met ? strings.done : strings.mark_done}
       </button>
     );
   }
 
-  // Counter for tasks with a target > 1.
   return (
     <div className="flex flex-wrap items-center gap-2">
       <div className="flex items-center gap-1">
@@ -87,9 +92,11 @@ export default function TaskProgress({
         </button>
       </div>
       <div className="text-xs text-gray-500">
-        / {targetCount}{" "}
+        {strings.target_units}{" "}
         {met ? (
-          <span className="ml-1 font-medium text-green-700">done</span>
+          <span className="ml-1 font-medium text-green-700">
+            {strings.target_met}
+          </span>
         ) : null}
       </div>
     </div>

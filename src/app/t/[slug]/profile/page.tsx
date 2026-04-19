@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getT } from "@/lib/i18n/server";
 import ProfileEditForm from "./edit-form";
 
 export default async function ProfilePage({
@@ -33,10 +34,7 @@ export default async function ProfilePage({
     .is("deleted_at", null)
     .maybeSingle();
 
-  if (!profile) {
-    // No profile on this team — you're not a member (yet).
-    redirect(`/t/${slug}`);
-  }
+  if (!profile) redirect(`/t/${slug}`);
 
   const { data: pending } = await supabase
     .from("profile_change_requests")
@@ -48,6 +46,8 @@ export default async function ProfilePage({
     .order("created_at", { ascending: false })
     .maybeSingle();
 
+  const t = await getT();
+
   return (
     <main className="mx-auto max-w-2xl px-4 py-10">
       <Link
@@ -56,27 +56,46 @@ export default async function ProfilePage({
       >
         ← {team.name}
       </Link>
-      <h1 className="mb-6 text-3xl font-bold">Your profile</h1>
+      <h1 className="mb-6 text-3xl font-bold">{t("profile.title")}</h1>
 
       {pending && (
         <section className="mb-6 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          <p className="font-semibold">Pending changes</p>
+          <p className="font-semibold">
+            {t("profile.pending_banner_title")}
+          </p>
           <p className="mt-1 text-amber-800">
-            Submitted {new Date(pending.created_at).toLocaleString()}. These
-            will appear after a team admin approves:
+            {t("profile.pending_submitted", {
+              time: new Date(pending.created_at).toLocaleString(),
+            })}
           </p>
           <ul className="mt-2 list-disc pl-5 text-xs">
             {pending.proposed_display_name && (
-              <li>Name → {pending.proposed_display_name}</li>
+              <li>
+                {t("profile.pending_name", {
+                  name: pending.proposed_display_name,
+                })}
+              </li>
             )}
             {pending.proposed_jersey_number !== null && (
-              <li>Jersey → #{pending.proposed_jersey_number}</li>
+              <li>
+                {t("profile.pending_jersey", {
+                  number: pending.proposed_jersey_number,
+                })}
+              </li>
             )}
             {pending.proposed_pronouns && (
-              <li>Pronouns → {pending.proposed_pronouns}</li>
+              <li>
+                {t("profile.pending_pronouns", {
+                  pronouns: pending.proposed_pronouns,
+                })}
+              </li>
             )}
             {pending.proposed_visibility && (
-              <li>Visibility → {pending.proposed_visibility.replace("_", " ")}</li>
+              <li>
+                {t("profile.pending_visibility", {
+                  visibility: pending.proposed_visibility.replace("_", " "),
+                })}
+              </li>
             )}
           </ul>
         </section>
@@ -90,6 +109,20 @@ export default async function ProfilePage({
           jersey_number: profile.jersey_number,
           pronouns: profile.pronouns,
           visibility: profile.visibility,
+        }}
+        strings={{
+          display_name_label: t("profile.display_name_label"),
+          display_name_hint: t("profile.display_name_hint"),
+          jersey_label: t("profile.jersey_label"),
+          pronouns_label: t("profile.pronouns_label"),
+          visibility_label: t("profile.visibility_label"),
+          visibility_full: t("profile.visibility_full"),
+          visibility_first: t("profile.visibility_first"),
+          visibility_initials: t("profile.visibility_initials"),
+          visibility_hint: t("profile.visibility_hint"),
+          submit: t("profile.submit"),
+          submit_pending: t("profile.submit_pending"),
+          submitted_ok: t("profile.submitted_ok"),
         }}
       />
     </main>

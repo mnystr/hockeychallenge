@@ -1,16 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getT } from "@/lib/i18n/server";
 import { markAllRead, markOneRead } from "./actions";
 import PreferencesForm from "./preferences-form";
-
-const KIND_LABELS: Record<string, string> = {
-  new_challenge: "New challenge",
-  leaderboard_passed: "Leaderboard passed",
-  approval_needed: "Approval needed",
-  team_orphaned: "Team without admin",
-  profile_change_reviewed: "Profile change reviewed",
-};
 
 export default async function NotificationsPage() {
   const supabase = await createClient();
@@ -43,9 +36,11 @@ export default async function NotificationsPage() {
 
   const teamsById = new Map<string, { name: string; slug: string }>();
   for (const m of teams ?? []) {
-    const t = m.teams as unknown as { id: string; name: string; slug: string };
-    teamsById.set(t.id, { name: t.name, slug: t.slug });
+    const tInfo = m.teams as unknown as { id: string; name: string; slug: string };
+    teamsById.set(tInfo.id, { name: tInfo.name, slug: tInfo.slug });
   }
+
+  const t = await getT();
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-10">
@@ -53,13 +48,13 @@ export default async function NotificationsPage() {
         href="/"
         className="mb-2 inline-block text-sm text-blue-600 hover:underline"
       >
-        ← Home
+        {t("common.back_home")}
       </Link>
-      <h1 className="mb-6 text-3xl font-bold">Notifications</h1>
+      <h1 className="mb-6 text-3xl font-bold">{t("notifications.title")}</h1>
 
       <section className="mb-10">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Recent</h2>
+          <h2 className="text-lg font-semibold">{t("notifications.recent")}</h2>
           {(notifications ?? []).some((n) => !n.read_at) && (
             <form
               action={async () => {
@@ -68,7 +63,7 @@ export default async function NotificationsPage() {
               }}
             >
               <button className="text-sm text-blue-600 hover:underline">
-                Mark all read
+                {t("notifications.mark_all_read")}
               </button>
             </form>
           )}
@@ -79,6 +74,8 @@ export default async function NotificationsPage() {
               const team = n.team_id ? teamsById.get(n.team_id) : null;
               const href = renderLink(n, team?.slug ?? null);
               const unread = !n.read_at;
+              const title = renderTitle(t, n);
+              const kindLabel = t(`notifications.kinds.${n.kind}`);
               return (
                 <li
                   key={n.id}
@@ -87,13 +84,13 @@ export default async function NotificationsPage() {
                   <div className="flex-1">
                     {href ? (
                       <Link href={href} className="font-medium hover:underline">
-                        {renderTitle(n)}
+                        {title}
                       </Link>
                     ) : (
-                      <span className="font-medium">{renderTitle(n)}</span>
+                      <span className="font-medium">{title}</span>
                     )}
                     <div className="mt-0.5 text-xs text-gray-500">
-                      {KIND_LABELS[n.kind] ?? n.kind}
+                      {kindLabel}
                       {team ? ` · ${team.name}` : ""}
                       {" · "}
                       {new Date(n.created_at).toLocaleString()}
@@ -107,7 +104,7 @@ export default async function NotificationsPage() {
                       }}
                     >
                       <button className="text-xs text-blue-600 hover:underline">
-                        mark read
+                        {t("notifications.mark_read")}
                       </button>
                     </form>
                   )}
@@ -116,12 +113,14 @@ export default async function NotificationsPage() {
             })}
           </ul>
         ) : (
-          <p className="text-sm text-gray-500">No notifications yet.</p>
+          <p className="text-sm text-gray-500">{t("notifications.empty")}</p>
         )}
       </section>
 
       <section>
-        <h2 className="mb-3 text-lg font-semibold">Preferences</h2>
+        <h2 className="mb-3 text-lg font-semibold">
+          {t("notifications.preferences")}
+        </h2>
         <PreferencesForm
           rows={(prefs ?? []).map((p) => ({
             teamId: p.team_id,
@@ -132,27 +131,48 @@ export default async function NotificationsPage() {
             in_app_new_challenge: p.in_app_new_challenge,
             in_app_leaderboard_passed: p.in_app_leaderboard_passed,
           }))}
+          strings={{
+            empty: t("notifications.prefs_empty"),
+            save: t("notifications.save_prefs"),
+            save_pending: t("notifications.save_prefs_pending"),
+            saved: t("notifications.prefs_saved"),
+            in_app_new_challenge: t("notifications.pref_in_app_new_challenge"),
+            email_new_challenge: t("notifications.pref_email_new_challenge"),
+            in_app_leaderboard_passed: t(
+              "notifications.pref_in_app_leaderboard_passed",
+            ),
+            email_leaderboard_passed: t(
+              "notifications.pref_email_leaderboard_passed",
+            ),
+            email_approval_needed: t("notifications.pref_email_approval_needed"),
+          }}
         />
       </section>
     </main>
   );
 }
 
-function renderTitle(n: {
-  kind: string;
-  payload: Record<string, unknown>;
-}): string {
+function renderTitle(
+  t: (key: string, vars?: Record<string, string | number>) => string,
+  n: {
+    kind: string;
+    payload: Record<string, unknown>;
+  },
+): string {
+  const key = `notifications.titles.${n.kind}`;
   switch (n.kind) {
     case "new_challenge":
-      return `New challenge: ${String(n.payload?.title ?? "(untitled)")}`;
+      return t(key, { title: String(n.payload?.title ?? "(untitled)") });
     case "leaderboard_passed":
-      return `You were passed on ${String(n.payload?.leaderboard_name ?? "a leaderboard")}`;
+      return t(key, {
+        name: String(n.payload?.leaderboard_name ?? ""),
+      });
     case "approval_needed":
-      return "Something needs your approval";
+      return t(key);
     case "team_orphaned":
-      return `Team needs an admin: ${String(n.payload?.team_name ?? "")}`;
+      return t(key, { name: String(n.payload?.team_name ?? "") });
     case "profile_change_reviewed":
-      return `Profile change ${String(n.payload?.outcome ?? "reviewed")}`;
+      return t(key, { outcome: String(n.payload?.outcome ?? "") });
     default:
       return n.kind;
   }

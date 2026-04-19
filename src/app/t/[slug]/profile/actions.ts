@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { getT } from "@/lib/i18n/server";
 import {
   profileChangeSchema,
   type ProfileChangeFormState,
@@ -44,5 +45,6 @@ export async function submitProfileChange(
   if (error) return { message: error.message };
 
   revalidatePath(`/t/${slug}/profile`);
-  return { message: "Submitted for approval." };
+  const t = await getT();
+  return { message: t("profile.submitted_ok") };
 }

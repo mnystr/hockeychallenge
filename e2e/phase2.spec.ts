@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { newEnContext } from "./helpers";
 
 /**
  * Phase 2 happy path.
@@ -23,7 +24,7 @@ test("theme swap + profile edit → admin approves → new name visible", async 
   const updatedName = `P2 Updated ${nonce}`;
 
   // === Admin: swap theme ===
-  const adminCtx = await browser.newContext();
+  const adminCtx = await newEnContext(browser);
   const admin = await adminCtx.newPage();
 
   await admin.goto("/login");
@@ -47,7 +48,7 @@ test("theme swap + profile edit → admin approves → new name visible", async 
   await expect(midnight).toContainText("(current)");
 
   // === Guardian: sign up + apply ===
-  const guardianCtx = await browser.newContext();
+  const guardianCtx = await newEnContext(browser);
   const guardian = await guardianCtx.newPage();
   await guardian.goto("/login");
   await guardian.getByRole("button", { name: "Create one" }).click();

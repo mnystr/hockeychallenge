@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSessionState } from "@/lib/auth/session";
+import { getT } from "@/lib/i18n/server";
 import OnboardingForms from "./forms";
 
 export default async function OnboardingPage() {
@@ -13,5 +14,33 @@ export default async function OnboardingPage() {
     redirect("/onboarding/pending");
   }
 
-  return <OnboardingForms email={session.email} />;
+  const t = await getT();
+
+  return (
+    <OnboardingForms
+      email={session.email}
+      strings={{
+        welcome: t("onboarding.welcome"),
+        intro: t("onboarding.intro"),
+        tab_join: t("onboarding.tab_join"),
+        tab_request: t("onboarding.tab_request"),
+        invite_code: t("onboarding.invite_code"),
+        invite_code_ph: t("onboarding.invite_code_ph"),
+        display_name: t("onboarding.display_name"),
+        display_name_ph: t("onboarding.display_name_ph"),
+        display_name_hint: t("onboarding.display_name_hint"),
+        jersey_number: t("onboarding.jersey_number"),
+        pronouns: t("onboarding.pronouns"),
+        pronouns_ph: t("onboarding.pronouns_ph"),
+        apply_join: t("onboarding.apply_join"),
+        apply_join_pending: t("onboarding.apply_join_pending"),
+        team_name: t("onboarding.team_name"),
+        team_name_ph: t("onboarding.team_name_ph"),
+        team_name_hint: t("onboarding.team_name_hint"),
+        submit_request: t("onboarding.submit_request"),
+        submit_request_pending: t("onboarding.submit_request_pending"),
+        sign_out: t("common.sign_out"),
+      }}
+    />
+  );
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getT } from "@/lib/i18n/server";
 
 export default async function LeaderboardsListPage({
   params,
@@ -43,6 +44,8 @@ export default async function LeaderboardsListPage({
   const active = (boards ?? []).filter((b) => b.status === "active");
   const archived = (boards ?? []).filter((b) => b.status === "archived");
 
+  const t = await getT();
+
   return (
     <main className="mx-auto max-w-2xl px-4 py-10">
       <Link
@@ -51,14 +54,16 @@ export default async function LeaderboardsListPage({
       >
         ← {team.name}
       </Link>
-      <h1 className="mb-6 text-3xl font-bold">Leaderboards</h1>
+      <h1 className="mb-6 text-3xl font-bold">{t("leaderboards.list_title")}</h1>
 
       {active.length > 0 && (
         <section className="mb-8">
-          <h2 className="mb-3 text-lg font-semibold">Active</h2>
+          <h2 className="mb-3 text-lg font-semibold">
+            {t("leaderboards.active")}
+          </h2>
           <ul className="divide-y divide-gray-200 rounded-md border border-gray-200">
             {active.map((b) => (
-              <BoardRow key={b.id} slug={slug} board={b} />
+              <BoardRow key={b.id} slug={slug} board={b} t={t} />
             ))}
           </ul>
         </section>
@@ -66,17 +71,19 @@ export default async function LeaderboardsListPage({
 
       {archived.length > 0 && (
         <section>
-          <h2 className="mb-3 text-lg font-semibold">History</h2>
+          <h2 className="mb-3 text-lg font-semibold">
+            {t("leaderboards.history")}
+          </h2>
           <ul className="divide-y divide-gray-200 rounded-md border border-gray-200">
             {archived.map((b) => (
-              <BoardRow key={b.id} slug={slug} board={b} />
+              <BoardRow key={b.id} slug={slug} board={b} t={t} />
             ))}
           </ul>
         </section>
       )}
 
       {active.length === 0 && archived.length === 0 && (
-        <p className="text-sm text-gray-500">No leaderboards yet.</p>
+        <p className="text-sm text-gray-500">{t("leaderboards.empty")}</p>
       )}
     </main>
   );
@@ -85,6 +92,7 @@ export default async function LeaderboardsListPage({
 function BoardRow({
   slug,
   board,
+  t,
 }: {
   slug: string;
   board: {
@@ -96,6 +104,7 @@ function BoardRow({
     starts_at: string | null;
     ends_at: string | null;
   };
+  t: (key: string, vars?: Record<string, string | number>) => string;
 }) {
   return (
     <li>
@@ -106,10 +115,16 @@ function BoardRow({
         <div>
           <div className="font-medium">{board.name}</div>
           <div className="mt-0.5 text-xs text-gray-500">
-            {board.kind}
+            {board.kind === "points"
+              ? t("leaderboards.kind_points")
+              : t("leaderboards.kind_standalone")}
             {board.unit ? ` · ${board.unit}` : ""}
             {board.ends_at
-              ? ` · ${board.status === "archived" ? "ended" : "ends"} ${new Date(board.ends_at).toLocaleDateString()}`
+              ? ` · ${
+                  board.status === "archived"
+                    ? t("leaderboards.ended")
+                    : t("leaderboards.ends")
+                } ${new Date(board.ends_at).toLocaleDateString()}`
               : ""}
           </div>
         </div>
