@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getT } from "@/lib/i18n/server";
+import { publicMediaUrl } from "@/lib/media/url";
 import ProfileEditForm from "./edit-form";
 
 export default async function ProfilePage({
@@ -27,7 +28,7 @@ export default async function ProfilePage({
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "id, display_name, jersey_number, pronouns, visibility, approved",
+      "id, display_name, jersey_number, pronouns, visibility, approved, profile_picture_path",
     )
     .eq("user_id", user.id)
     .eq("team_id", team.id)
@@ -39,7 +40,7 @@ export default async function ProfilePage({
   const { data: pending } = await supabase
     .from("profile_change_requests")
     .select(
-      "id, proposed_display_name, proposed_jersey_number, proposed_pronouns, proposed_visibility, created_at",
+      "id, proposed_display_name, proposed_jersey_number, proposed_pronouns, proposed_visibility, proposed_picture_path, created_at",
     )
     .eq("profile_id", profile.id)
     .eq("status", "pending")
@@ -97,6 +98,9 @@ export default async function ProfilePage({
                 })}
               </li>
             )}
+            {pending.proposed_picture_path && (
+              <li>{t("profile.pending_picture")}</li>
+            )}
           </ul>
         </section>
       )}
@@ -109,6 +113,7 @@ export default async function ProfilePage({
           jersey_number: profile.jersey_number,
           pronouns: profile.pronouns,
           visibility: profile.visibility,
+          picture_url: publicMediaUrl(profile.profile_picture_path),
         }}
         strings={{
           display_name_label: t("profile.display_name_label"),
@@ -120,6 +125,10 @@ export default async function ProfilePage({
           visibility_first: t("profile.visibility_first"),
           visibility_initials: t("profile.visibility_initials"),
           visibility_hint: t("profile.visibility_hint"),
+          picture_label: t("profile.picture_label"),
+          picture_hint: t("profile.picture_hint"),
+          picture_current: t("profile.picture_current"),
+          picture_none: t("profile.picture_none"),
           submit: t("profile.submit"),
           submit_pending: t("profile.submit_pending"),
           submitted_ok: t("profile.submitted_ok"),

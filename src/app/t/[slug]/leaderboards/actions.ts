@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { notifyOvertakes, snapshotStandings } from "@/lib/leaderboards/overtake";
 import {
   standaloneEntrySchema,
   type StandaloneEntryFormState,
@@ -26,6 +27,15 @@ export async function submitStandaloneEntry(
   } = await supabase.auth.getUser();
   if (!user) return { message: "Not authenticated." };
 
+  const { data: board } = await supabase
+    .from("leaderboards")
+    .select("team_id")
+    .eq("id", leaderboardId)
+    .maybeSingle();
+  const teamId = board?.team_id ?? null;
+
+  const before = teamId ? await snapshotStandings(teamId) : new Map();
+
   const { error } = await supabase
     .from("leaderboard_entries")
     .upsert(
@@ -34,6 +44,15 @@ export async function submitStandaloneEntry(
     );
 
   if (error) return { message: error.message };
+
+  if (teamId) {
+    await notifyOvertakes({
+      teamId,
+      teamSlug: slug,
+      actorUserId: user.id,
+      before,
+    });
+  }
 
   revalidatePath(`/t/${slug}/leaderboards/${leaderboardId}`);
   return { message: "Saved." };

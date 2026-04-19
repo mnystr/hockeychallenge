@@ -150,6 +150,15 @@ export const dict = {
       pending_jersey: "Tröja → #{number}",
       pending_pronouns: "Pronomen → {pronouns}",
       pending_visibility: "Synlighet → {visibility}",
+      pending_picture: "Ny profilbild väntar på godkännande",
+      picture_label: "Profilbild",
+      picture_hint:
+        "Bilden beskärs automatiskt till 512×512. JPEG, PNG, WebP eller AVIF upp till 15 MB.",
+      picture_current: "Nuvarande",
+      picture_none: "Ingen bild uppladdad än.",
+      picture_too_large: "Bilden är för stor (max 15 MB).",
+      picture_unsupported: "Filformatet stöds inte.",
+      picture_failed: "Kunde inte ladda upp bilden.",
       display_name_label: "Visningsnamn",
       display_name_hint:
         "Så här visas spelaren i laguppställning och topplistor (styrs av synlighet).",
@@ -363,6 +372,15 @@ export const dict = {
       pending_jersey: "Jersey → #{number}",
       pending_pronouns: "Pronouns → {pronouns}",
       pending_visibility: "Visibility → {visibility}",
+      pending_picture: "New profile picture pending approval",
+      picture_label: "Profile picture",
+      picture_hint:
+        "Automatically cropped to 512×512. JPEG, PNG, WebP or AVIF up to 15 MB.",
+      picture_current: "Current",
+      picture_none: "No picture uploaded yet.",
+      picture_too_large: "Image is too large (max 15 MB).",
+      picture_unsupported: "File format not supported.",
+      picture_failed: "Could not upload the picture.",
       display_name_label: "Display name",
       display_name_hint:
         "How this player appears on rosters and leaderboards (subject to visibility setting).",

@@ -6,6 +6,7 @@ import {
   type Visibility,
 } from "@/lib/profiles/display-name";
 import { getT } from "@/lib/i18n/server";
+import { publicMediaUrl } from "@/lib/media/url";
 
 export default async function RosterPage({
   params,
@@ -49,7 +50,7 @@ export default async function RosterPage({
   const { data: profiles } = await supabase
     .from("profiles")
     .select(
-      "user_id, display_name, jersey_number, pronouns, visibility, approved",
+      "user_id, display_name, jersey_number, pronouns, visibility, approved, profile_picture_path",
     )
     .eq("team_id", team.id)
     .is("deleted_at", null);
@@ -98,13 +99,33 @@ export default async function RosterPage({
                 ? p.display_name
                 : renderDisplayName(p.display_name, p.visibility as Visibility);
             const role = roleByUser.get(p.user_id)?.role;
+            // Players with visibility=initials also hide their photo from
+            // non-admin teammates. Admins and the owner always see it.
+            const photoVisible =
+              isAdmin || isYou || p.visibility !== "initials";
+            const photoUrl = photoVisible
+              ? publicMediaUrl(p.profile_picture_path)
+              : null;
             return (
               <li
                 key={p.user_id}
-                className={`flex items-center justify-between px-4 py-3 text-sm ${
+                className={`flex items-center justify-between gap-3 px-4 py-3 text-sm ${
                   isYou ? "bg-blue-50" : ""
                 }`}
               >
+                <div className="flex items-center gap-3">
+                {photoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={photoUrl}
+                    alt=""
+                    className="h-10 w-10 shrink-0 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-medium text-gray-400">
+                    {shown.slice(0, 1).toUpperCase()}
+                  </div>
+                )}
                 <div>
                   <div className="font-medium">
                     {shown}
@@ -126,6 +147,7 @@ export default async function RosterPage({
                     {p.pronouns ? ` · ${p.pronouns}` : ""}
                     {isAdmin && !p.approved && ` · ${t("roster.profile_pending")}`}
                   </div>
+                </div>
                 </div>
               </li>
             );

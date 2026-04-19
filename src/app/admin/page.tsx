@@ -41,9 +41,17 @@ export default async function SuperAdminPage() {
   return (
     <main className="mx-auto max-w-3xl px-4 py-10">
       <h1 className="mb-2 text-3xl font-bold">Super-admin</h1>
-      <p className="mb-8 text-sm text-gray-500">
+      <p className="mb-4 text-sm text-gray-500">
         Approve new teams and un-orphan teams that have lost their admins.
       </p>
+      <div className="mb-8">
+        <Link
+          href="/admin/users"
+          className="inline-block rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+        >
+          User lookup
+        </Link>
+      </div>
 
       <section className="mb-10">
         <h2 className="mb-3 text-xl font-semibold">Pending team requests</h2>

@@ -3,7 +3,9 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireTeamAdmin } from "@/lib/auth/session";
 import { themeTokensSchema } from "@/lib/themes/schema";
+import { publicMediaUrl } from "@/lib/media/url";
 import { setTeamTheme } from "./actions";
+import MediaUploadForm from "./media-form";
 
 export default async function SettingsPage({
   params,
@@ -24,7 +26,7 @@ export default async function SettingsPage({
   const supabase = await createClient();
   const { data: team } = await supabase
     .from("teams")
-    .select("theme_id")
+    .select("theme_id, logo_path, header_image_path")
     .eq("id", ctx.teamId)
     .maybeSingle();
 
@@ -101,6 +103,30 @@ export default async function SettingsPage({
               </form>
             );
           })}
+        </div>
+      </section>
+
+      <section className="mt-10">
+        <h2 className="mb-3 text-lg font-semibold">Team images</h2>
+        <p className="mb-4 text-sm text-gray-500">
+          Uploaded images are resized automatically (logo 512×512, header
+          1600×500) and stored as WebP.
+        </p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <MediaUploadForm
+            slug={slug}
+            kind="logo"
+            label="Logo"
+            previewShape="square"
+            currentUrl={publicMediaUrl(team?.logo_path)}
+          />
+          <MediaUploadForm
+            slug={slug}
+            kind="header"
+            label="Header image"
+            previewShape="wide"
+            currentUrl={publicMediaUrl(team?.header_image_path)}
+          />
         </div>
       </section>
     </main>

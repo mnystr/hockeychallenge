@@ -118,6 +118,14 @@ Next.js. Free tiers cover a couple of youth teams.
 See [`docs/scheduled-jobs.md`](./docs/scheduled-jobs.md). Takes two SQL
 statements in Supabase Studio once the project is up.
 
+### 3b. Media storage
+
+The `20260419120000_phase3_media_storage.sql` migration creates a `media`
+bucket and locks client-side writes. Profile pictures + team logos + team
+header images are uploaded through server actions that resize with `sharp`
+and write via the service-role key — no extra setup is required in the
+dashboard as long as `SUPABASE_SERVICE_ROLE_KEY` is set (see below).
+
 ### 4. Vercel
 
 1. Import the GitHub repo at <https://vercel.com/new>. Root directory is the

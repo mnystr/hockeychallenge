@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { emailApprovalNeeded } from "@/lib/email/events";
 import {
   inviteRedeemSchema,
   teamRequestSchema,
@@ -37,6 +38,29 @@ export async function redeemInvite(
 
   if (error) {
     return { message: friendlyInviteError(error.message) };
+  }
+
+  // Fan out "approval needed" email to admins of the team the user just
+  // applied to. The membership was just created pending, so we look it
+  // up by (user, pending). Failure is swallowed inside emailApprovalNeeded.
+  const { data: pendingMembership } = await supabase
+    .from("memberships")
+    .select("team_id, teams(id, name, slug)")
+    .eq("user_id", user.id)
+    .eq("status", "pending")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle<{
+      team_id: string;
+      teams: { id: string; name: string; slug: string } | null;
+    }>();
+  if (pendingMembership?.teams) {
+    await emailApprovalNeeded({
+      teamId: pendingMembership.teams.id,
+      teamName: pendingMembership.teams.name,
+      teamSlug: pendingMembership.teams.slug,
+      kind: "membership",
+    });
   }
 
   redirect("/onboarding/pending");

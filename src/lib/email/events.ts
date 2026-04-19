@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { sendEmail } from "./send";
 
 function baseUrl(): string {
@@ -6,6 +7,29 @@ function baseUrl(): string {
     process.env.NEXT_PUBLIC_SITE_URL ??
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
   );
+}
+
+/**
+ * Resolve a list of user ids to email addresses via the Auth admin API.
+ * Requires SUPABASE_SERVICE_ROLE_KEY; returns [] if absent so callers
+ * can skip sending cleanly in dev without the key set.
+ */
+async function resolveEmails(userIds: string[]): Promise<string[]> {
+  if (userIds.length === 0) return [];
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    console.info(
+      "[email] SUPABASE_SERVICE_ROLE_KEY absent — can't resolve recipient emails. Skipping.",
+    );
+    return [];
+  }
+  const admin = createServiceClient();
+  const emails: string[] = [];
+  for (const uid of userIds) {
+    const { data, error } = await admin.auth.admin.getUserById(uid);
+    if (error || !data?.user?.email) continue;
+    emails.push(data.user.email);
+  }
+  return emails;
 }
 
 /**
@@ -37,34 +61,8 @@ export async function emailNewChallenge(params: {
     const userIds = Array.from(
       new Set((recipients ?? []).map((r) => r.user_id)),
     );
-    if (userIds.length === 0) return;
 
-    // We need auth.users.email — server-side Supabase with RLS won't
-    // expose other users' emails to us. Use the admin client (service
-    // role) so the cron/server action can look them up. Fall back to a
-    // raw query through the public Supabase client if no service role
-    // key is present (we'll just fail to send in that case).
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!serviceKey) {
-      console.info(
-        "[email] SUPABASE_SERVICE_ROLE_KEY absent — can't resolve recipient emails. Skipping new-challenge email.",
-      );
-      return;
-    }
-
-    const { createClient: createAdmin } = await import("@supabase/supabase-js");
-    const admin = createAdmin(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      serviceKey,
-      { auth: { persistSession: false } },
-    );
-    // Use the Auth admin endpoint to fetch emails in chunks.
-    const emails: string[] = [];
-    for (const uid of userIds) {
-      const { data, error } = await admin.auth.admin.getUserById(uid);
-      if (error || !data?.user?.email) continue;
-      emails.push(data.user.email);
-    }
+    const emails = await resolveEmails(userIds);
     if (emails.length === 0) return;
 
     const url = `${baseUrl()}/t/${params.teamSlug}/challenges/${params.challengeId}`;
@@ -76,5 +74,129 @@ export async function emailNewChallenge(params: {
     });
   } catch (err) {
     console.error("[email] emailNewChallenge failed:", err);
+  }
+}
+
+/**
+ * Email active team-admins of a team when something is pending review
+ * (membership application, profile change request). Only admins with
+ * email_approval_needed=true are emailed.
+ */
+export async function emailApprovalNeeded(params: {
+  teamId: string;
+  teamName: string;
+  teamSlug: string;
+  kind: "membership" | "profile_change";
+}) {
+  try {
+    const admin = createServiceClient();
+
+    const { data: adminMemberships } = await admin
+      .from("memberships")
+      .select("user_id")
+      .eq("team_id", params.teamId)
+      .eq("role", "team_admin")
+      .eq("status", "active")
+      .is("deleted_at", null);
+    const adminIds = (adminMemberships ?? []).map((m) => m.user_id);
+    if (adminIds.length === 0) return;
+
+    const { data: prefs } = await admin
+      .from("notification_preferences")
+      .select("user_id")
+      .eq("team_id", params.teamId)
+      .eq("email_approval_needed", true)
+      .in("user_id", adminIds);
+    const userIds = (prefs ?? []).map((p) => p.user_id);
+
+    const emails = await resolveEmails(userIds);
+    if (emails.length === 0) return;
+
+    const url = `${baseUrl()}/t/${params.teamSlug}/admin/approvals`;
+    const what =
+      params.kind === "membership"
+        ? "a new member application"
+        : "a profile change";
+
+    await sendEmail({
+      to: emails,
+      subject: `Approval needed: ${params.teamName}`,
+      text: `${what} is waiting for your review on ${params.teamName}.\n\nReview: ${url}\n\nManage email preferences: ${baseUrl()}/notifications`,
+    });
+  } catch (err) {
+    console.error("[email] emailApprovalNeeded failed:", err);
+  }
+}
+
+/**
+ * Email users who opted in (email_leaderboard_passed=true) when they
+ * lose a rank on an active points leaderboard. `passedUserIds` is the
+ * set of users who were overtaken since the last send.
+ */
+export async function emailLeaderboardPassed(params: {
+  leaderboardId: string;
+  teamId: string;
+  teamSlug: string;
+  leaderboardName: string;
+  passedUserIds: string[];
+}) {
+  try {
+    if (params.passedUserIds.length === 0) return;
+    const admin = createServiceClient();
+
+    const { data: prefs } = await admin
+      .from("notification_preferences")
+      .select("user_id")
+      .eq("team_id", params.teamId)
+      .eq("email_leaderboard_passed", true)
+      .in("user_id", params.passedUserIds);
+    const userIds = (prefs ?? []).map((p) => p.user_id);
+
+    const emails = await resolveEmails(userIds);
+    if (emails.length === 0) return;
+
+    const url = `${baseUrl()}/t/${params.teamSlug}/leaderboards/${params.leaderboardId}`;
+
+    await sendEmail({
+      to: emails,
+      subject: `You were passed on ${params.leaderboardName}`,
+      text: `Someone moved ahead of you on the "${params.leaderboardName}" leaderboard.\n\nTake a look: ${url}\n\nManage email preferences: ${baseUrl()}/notifications`,
+    });
+  } catch (err) {
+    console.error("[email] emailLeaderboardPassed failed:", err);
+  }
+}
+
+/**
+ * Email all active super-admins when a team goes orphaned (no active
+ * team-admins left).
+ */
+export async function emailTeamOrphaned(params: {
+  teamId: string;
+  teamName: string;
+  teamSlug: string;
+}) {
+  try {
+    const admin = createServiceClient();
+
+    const { data: supers } = await admin
+      .from("app_users")
+      .select("id")
+      .eq("is_super_admin", true)
+      .is("deleted_at", null);
+    const userIds = (supers ?? []).map((s) => s.id);
+
+    const emails = await resolveEmails(userIds);
+    if (emails.length === 0) return;
+
+    const url = `${baseUrl()}/admin`;
+
+    await sendEmail({
+      to: emails,
+      subject: `Team without admin: ${params.teamName}`,
+      text: `"${params.teamName}" has no active team admins left.\n\nAssign one from the super-admin dashboard: ${url}`,
+    });
+  } catch (err) {
+    console.error("[email] emailTeamOrphaned failed:", err);
   }
 }

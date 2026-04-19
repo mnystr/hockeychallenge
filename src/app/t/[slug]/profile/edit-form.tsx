@@ -10,6 +10,7 @@ type Profile = {
   jersey_number: number | null;
   pronouns: string | null;
   visibility: "full" | "first_name_only" | "initials";
+  picture_url: string | null;
 };
 
 type Strings = {
@@ -22,6 +23,10 @@ type Strings = {
   visibility_first: string;
   visibility_initials: string;
   visibility_hint: string;
+  picture_label: string;
+  picture_hint: string;
+  picture_current: string;
+  picture_none: string;
   submit: string;
   submit_pending: string;
   submitted_ok: string;
@@ -43,7 +48,7 @@ export default function ProfileEditForm({
   >(bound, undefined);
 
   return (
-    <form action={action} className="space-y-4" noValidate>
+    <form action={action} className="space-y-4" noValidate encType="multipart/form-data">
       <Field
         name="display_name"
         label={strings.display_name_label}
@@ -85,6 +90,38 @@ export default function ProfileEditForm({
           <option value="initials">{strings.visibility_initials}</option>
         </select>
         <p className="mt-1 text-xs text-gray-500">{strings.visibility_hint}</p>
+      </div>
+
+      <div>
+        <label htmlFor="picture" className="mb-1 block text-sm font-medium">
+          {strings.picture_label}
+        </label>
+        <div className="flex items-start gap-3">
+          <div className="shrink-0">
+            {profile.picture_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={profile.picture_url}
+                alt={strings.picture_current}
+                className="h-16 w-16 rounded-full object-cover"
+              />
+            ) : (
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 text-xs text-gray-400">
+                {strings.picture_none}
+              </div>
+            )}
+          </div>
+          <div className="flex-1">
+            <input
+              id="picture"
+              name="picture"
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+              className="block w-full text-sm file:mr-3 file:rounded-md file:border file:border-gray-300 file:bg-white file:px-3 file:py-1.5 file:text-sm file:font-medium hover:file:bg-gray-50"
+            />
+            <p className="mt-1 text-xs text-gray-500">{strings.picture_hint}</p>
+          </div>
+        </div>
       </div>
 
       {state?.message && (

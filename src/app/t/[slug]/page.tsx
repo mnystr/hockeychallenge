@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getT } from "@/lib/i18n/server";
+import { publicMediaUrl } from "@/lib/media/url";
 import { setDefaultTeam } from "./actions";
 
 export default async function TeamPage({
@@ -16,11 +17,13 @@ export default async function TeamPage({
 
   const { data: team } = await supabase
     .from("teams")
-    .select("id, name, slug, status")
+    .select("id, name, slug, status, logo_path, header_image_path")
     .eq("slug", slug)
     .is("deleted_at", null)
     .maybeSingle();
   if (!team) notFound();
+  const logoUrl = publicMediaUrl(team.logo_path);
+  const headerUrl = publicMediaUrl(team.header_image_path);
 
   const [{ data: appUser }, { data: memberships }, unreadNotifs] =
     await Promise.all([
@@ -59,8 +62,25 @@ export default async function TeamPage({
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-10">
+      {headerUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={headerUrl}
+          alt=""
+          className="mb-4 h-40 w-full rounded-md object-cover sm:h-48"
+        />
+      )}
       <div className="mb-6 flex items-start justify-between gap-4">
-        <div>
+        <div className="flex items-start gap-3">
+          {logoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={logoUrl}
+              alt=""
+              className="h-14 w-14 shrink-0 rounded-md border border-gray-200 object-cover"
+            />
+          )}
+          <div>
           <h1
             className="text-3xl font-bold"
             style={{ color: "var(--theme-primary, inherit)" }}
@@ -99,6 +119,7 @@ export default async function TeamPage({
               )}
             </div>
           )}
+          </div>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link

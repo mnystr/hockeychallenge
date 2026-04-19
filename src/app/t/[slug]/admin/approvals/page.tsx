@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireTeamAdmin } from "@/lib/auth/session";
+import { publicMediaUrl } from "@/lib/media/url";
 import {
   approveMembership,
   rejectMembership,
@@ -74,12 +75,15 @@ export default async function ApprovalsPage({
       jersey_number: number | null;
       pronouns: string | null;
       visibility: string;
+      profile_picture_path: string | null;
     }
   >();
   if (changeProfileIds.length > 0) {
     const { data: currentProfiles } = await supabase
       .from("profiles")
-      .select("id, display_name, jersey_number, pronouns, visibility")
+      .select(
+        "id, display_name, jersey_number, pronouns, visibility, profile_picture_path",
+      )
       .in("id", changeProfileIds);
     for (const p of currentProfiles ?? []) {
       currentProfilesById.set(p.id, {
@@ -87,6 +91,7 @@ export default async function ApprovalsPage({
         jersey_number: p.jersey_number,
         pronouns: p.pronouns,
         visibility: p.visibility,
+        profile_picture_path: p.profile_picture_path,
       });
     }
   }
@@ -204,7 +209,26 @@ export default async function ApprovalsPage({
                           </li>
                         )}
                       {c.proposed_picture_path && (
-                        <li>Picture: new upload</li>
+                        <li className="mt-2 flex items-center gap-3">
+                          <span>Picture:</span>
+                          {current?.profile_picture_path ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={publicMediaUrl(current.profile_picture_path) ?? ""}
+                              alt="current"
+                              className="h-12 w-12 rounded-full object-cover opacity-50"
+                            />
+                          ) : (
+                            <span className="text-gray-400">—</span>
+                          )}
+                          <span>→</span>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={publicMediaUrl(c.proposed_picture_path) ?? ""}
+                            alt="proposed"
+                            className="h-12 w-12 rounded-full object-cover"
+                          />
+                        </li>
                       )}
                     </ul>
                     <div className="mt-1 text-xs text-gray-500">
