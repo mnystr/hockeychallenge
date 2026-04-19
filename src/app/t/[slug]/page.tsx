@@ -21,19 +21,26 @@ export default async function TeamPage({
     .maybeSingle();
   if (!team) notFound();
 
-  const [{ data: appUser }, { data: memberships }] = await Promise.all([
-    supabase
-      .from("app_users")
-      .select("is_super_admin, default_team_id")
-      .eq("id", user.id)
-      .maybeSingle(),
-    supabase
-      .from("memberships")
-      .select("role, status, team_id, teams!inner(name, slug)")
-      .eq("user_id", user.id)
-      .eq("status", "active")
-      .is("deleted_at", null),
-  ]);
+  const [{ data: appUser }, { data: memberships }, unreadNotifs] =
+    await Promise.all([
+      supabase
+        .from("app_users")
+        .select("is_super_admin, default_team_id")
+        .eq("id", user.id)
+        .maybeSingle(),
+      supabase
+        .from("memberships")
+        .select("role, status, team_id, teams!inner(name, slug)")
+        .eq("user_id", user.id)
+        .eq("status", "active")
+        .is("deleted_at", null),
+      supabase
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .is("read_at", null),
+    ]);
+  const unreadCount = unreadNotifs.count ?? 0;
 
   const isSuperAdmin = appUser?.is_super_admin ?? false;
   const membership = (memberships ?? []).find((m) => m.team_id === team.id);
@@ -93,7 +100,18 @@ export default async function TeamPage({
             </div>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/notifications"
+            className="relative rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50"
+          >
+            Notifications
+            {unreadCount > 0 && (
+              <span className="ml-1 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-blue-600 px-1.5 text-xs font-medium text-white">
+                {unreadCount}
+              </span>
+            )}
+          </Link>
           {isSuperAdmin && (
             <Link
               href="/admin"

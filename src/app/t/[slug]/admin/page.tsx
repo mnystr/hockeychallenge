@@ -108,6 +108,15 @@ export default async function TeamAdminDashboard({
           <div className="font-semibold">Settings</div>
           <div className="mt-1 text-sm text-gray-500">Theme and branding.</div>
         </Link>
+        <Link
+          href={`/t/${slug}/admin/audit`}
+          className="rounded-md border border-gray-200 p-4 hover:bg-gray-50"
+        >
+          <div className="font-semibold">Audit log</div>
+          <div className="mt-1 text-sm text-gray-500">
+            Every moderation action.
+          </div>
+        </Link>
       </div>
 
       <Link
