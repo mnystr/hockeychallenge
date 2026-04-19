@@ -48,7 +48,7 @@ test("admin creates challenge + leaderboard → player completes → archive pre
   await expect(admin.getByText("Saved.")).toBeVisible();
 
   // Add one task with target 1, 10 points.
-  await admin.getByLabel("Title").last().fill(taskTitle);
+  await admin.getByLabel("Task title").fill(taskTitle);
   await admin.getByLabel("Target count").fill("1");
   await admin.getByLabel("Points (optional)").fill("10");
   await admin.getByRole("button", { name: "Add task" }).click();

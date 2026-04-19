@@ -150,7 +150,7 @@ function TaskFields({
     <>
       <Field
         name="title"
-        label="Title"
+        label="Task title"
         defaultValue={defaults?.title ?? ""}
         errors={state?.errors?.title}
         required
