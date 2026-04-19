@@ -117,6 +117,15 @@ export default async function TeamAdminDashboard({
             Every moderation action.
           </div>
         </Link>
+        <Link
+          href={`/t/${slug}/admin/trash`}
+          className="rounded-md border border-gray-200 p-4 hover:bg-gray-50"
+        >
+          <div className="font-semibold">Trash</div>
+          <div className="mt-1 text-sm text-gray-500">
+            Restore soft-deleted items.
+          </div>
+        </Link>
       </div>
 
       <Link
