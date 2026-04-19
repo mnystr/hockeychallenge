@@ -10,6 +10,7 @@ import {
   type UpdateChallengeFormState,
   type TaskFormState,
 } from "@/lib/auth/schemas-challenges";
+import { emailNewChallenge } from "@/lib/email/events";
 
 export async function createChallengeDraft(slug: string) {
   const { teamId } = await requireTeamAdmin(slug);
@@ -84,11 +85,36 @@ async function setChallengeStatus(
 ) {
   await requireTeamAdmin(slug);
   const supabase = await createClient();
+
+  // Capture the previous status so we know whether this is a
+  // publish transition worth emailing about.
+  const { data: before } = await supabase
+    .from("challenges")
+    .select("status, title")
+    .eq("id", challengeId)
+    .maybeSingle();
+
   const { error } = await supabase
     .from("challenges")
     .update({ status })
     .eq("id", challengeId);
   if (error) throw new Error(error.message);
+
+  if (
+    status === "published" &&
+    before &&
+    before.status !== "published"
+  ) {
+    // Fire-and-forget. DB trigger handles in-app notifications; this
+    // adds the opted-in email. Failure inside emailNewChallenge is
+    // already swallowed with a console.error.
+    await emailNewChallenge({
+      challengeId,
+      teamSlug: slug,
+      title: before.title,
+    });
+  }
+
   revalidatePath(`/t/${slug}/admin/challenges`);
   revalidatePath(`/t/${slug}/admin/challenges/${challengeId}`);
 }
