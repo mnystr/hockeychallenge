@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -14,7 +14,17 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "hockeychallenge",
-  description: "Off-season training challenges and leaderboards for youth hockey teams.",
+  description:
+    "Off-season training challenges and leaderboards for youth hockey teams.",
+  applicationName: "hockeychallenge",
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "hockey" },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#1e3a8a",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({
