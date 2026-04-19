@@ -80,25 +80,76 @@ The test uses a unique `guardian+<timestamp>@example.com` each run, so it
 can be re-run without resetting the DB. If the test gets stuck in a weird
 state (rare), `npx supabase db reset` restores the seeded baseline.
 
-## Deploying (later)
+## Deploying
 
-Production deployment isn't wired up yet. When we're ready, the steps will be:
+Target stack: **Supabase cloud** for Postgres + Auth + Storage, **Vercel** for
+Next.js. Free tiers cover a couple of youth teams.
 
-1. **Supabase cloud project** — create a new project at <https://supabase.com>.
-   Copy the project ref, URL, and anon/service-role keys.
-2. **Link the local project:**
+### 1. Supabase cloud project
+
+1. Create a project at <https://supabase.com>. Pick a region close to your
+   users and save the database password somewhere safe (Supabase only shows
+   it once).
+2. Grab the project ref (in the URL: `https://supabase.com/dashboard/project/<ref>`)
+   and, from **Project Settings → API**, the Project URL, the Publishable
+   (anon) key, and the Secret (service role) key.
+3. From your local repo, link and push migrations:
    ```bash
+   npx supabase login         # opens a browser to authenticate
    npx supabase link --project-ref <ref>
-   npx supabase db push     # applies local migrations to cloud
+   npx supabase db push       # applies every migration in supabase/migrations
    ```
-3. **Google OAuth** — create credentials in Google Cloud Console, paste into
-   the Supabase dashboard (Authentication → Providers → Google).
-4. **Vercel** — import the GitHub repo, set `NEXT_PUBLIC_SUPABASE_URL`,
-   `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` in Project
-   Settings → Environment Variables. Push to `main` to deploy.
+   `db push` does **not** run `seed.sql` — that's local-only. You bootstrap
+   production admins via [`docs/admin-recovery.md`](./docs/admin-recovery.md).
 
-Seed data is local-only — on the cloud, you'll bootstrap the first super-admin
-via `docs/admin-recovery.md`.
+### 2. Google OAuth (optional but recommended)
+
+1. Google Cloud Console → APIs & Services → Credentials → Create OAuth 2.0
+   Client ID → Web application.
+2. Authorized redirect URIs: `https://<ref>.supabase.co/auth/v1/callback`
+3. In Supabase dashboard → Authentication → Providers → Google, paste the
+   Client ID and Secret.
+4. Authentication → URL Configuration → Site URL: set to your production
+   domain (e.g. `https://hockey.example.com`). Add any additional redirect
+   URLs you use for previews (`https://*.vercel.app/**`).
+
+### 3. Scheduled jobs (optional — needed for recurring challenges + auto archive)
+
+See [`docs/scheduled-jobs.md`](./docs/scheduled-jobs.md). Takes two SQL
+statements in Supabase Studio once the project is up.
+
+### 4. Vercel
+
+1. Import the GitHub repo at <https://vercel.com/new>. Root directory is the
+   repo root, framework preset Next.js — no changes needed.
+2. Environment Variables (set for Production + Preview):
+
+   | Key | Value |
+   |---|---|
+   | `NEXT_PUBLIC_SUPABASE_URL` | Project URL from step 1 |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Publishable key |
+   | `SUPABASE_SERVICE_ROLE_KEY` | Secret key (server-only) |
+   | `NEXT_PUBLIC_SITE_URL` | Your Vercel/custom domain URL |
+   | `RESEND_API_KEY` | From <https://resend.com> (optional — emails are skipped without it) |
+   | `EMAIL_FROM` | e.g. `"hockey <noreply@yourdomain.com>"` (optional) |
+3. Push to `main` — Vercel builds and deploys on every commit.
+
+### 5. First super-admin
+
+The seed doesn't run in production. Instead:
+
+1. Sign up through the app like any user.
+2. Use the Supabase Studio SQL editor to run the promotion SQL from
+   [`docs/admin-recovery.md`](./docs/admin-recovery.md#re-flag-an-existing-user-as-super-admin)
+   twice — once for yourself, once for a co-admin (the app enforces a
+   minimum of two super-admins).
+
+### 6. Optional: custom domain
+
+In Vercel → Project → Settings → Domains, add your domain and follow the
+DNS instructions. Update `NEXT_PUBLIC_SITE_URL` to match. If you use Google
+OAuth, also add the domain to the Google Cloud authorized redirect URIs
+**and** to Supabase Authentication → URL Configuration.
 
 ## Project layout
 

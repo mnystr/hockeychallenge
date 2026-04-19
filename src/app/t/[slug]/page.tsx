@@ -131,7 +131,7 @@ export default async function TeamPage({
         </div>
       </div>
 
-      <nav className="grid gap-3 sm:grid-cols-3">
+      <nav className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Link
           href={`/t/${slug}/challenges`}
           className="rounded-md border border-gray-200 p-4 hover:bg-gray-50"
@@ -148,6 +148,15 @@ export default async function TeamPage({
           <div className="font-semibold">Leaderboards</div>
           <div className="mt-1 text-sm text-gray-500">
             See where you stand.
+          </div>
+        </Link>
+        <Link
+          href={`/t/${slug}/members`}
+          className="rounded-md border border-gray-200 p-4 hover:bg-gray-50"
+        >
+          <div className="font-semibold">Roster</div>
+          <div className="mt-1 text-sm text-gray-500">
+            Who&apos;s on the team.
           </div>
         </Link>
         <Link
