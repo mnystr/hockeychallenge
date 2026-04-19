@@ -110,3 +110,28 @@ export async function revokeInvite(slug: string, inviteId: string) {
   if (error) throw new Error(error.message);
   revalidatePath(`/t/${slug}/admin/invites`);
 }
+
+export async function approveProfileChange(slug: string, requestId: string) {
+  await requireTeamAdmin(slug);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("approve_profile_change", {
+    p_request_id: requestId,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath(`/t/${slug}/admin/approvals`);
+}
+
+export async function rejectProfileChange(
+  slug: string,
+  requestId: string,
+  note: string | null,
+) {
+  await requireTeamAdmin(slug);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("reject_profile_change", {
+    p_request_id: requestId,
+    p_note: note,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath(`/t/${slug}/admin/approvals`);
+}

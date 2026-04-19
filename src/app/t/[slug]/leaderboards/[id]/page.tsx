@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import {
+  renderDisplayName,
+  type Visibility,
+} from "@/lib/profiles/display-name";
 import StandaloneEntryForm from "./entry-form";
 
 type Row = {
@@ -92,6 +96,23 @@ export default async function LeaderboardDetailPage({
       : all.filter((r) => r.value > 0 || r.user_id === user.id);
   }
 
+  // Fetch current visibility per row's user so we can render names
+  // correctly for non-admin viewers. Admins and own rows bypass.
+  const rowUserIds = rows.map((r) => r.user_id);
+  const visibilityByUser = new Map<string, Visibility>();
+  if (rowUserIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("user_id, visibility")
+      .eq("team_id", team.id)
+      .in("user_id", rowUserIds)
+      .eq("approved", true)
+      .is("deleted_at", null);
+    for (const p of profiles ?? []) {
+      visibilityByUser.set(p.user_id, p.visibility as Visibility);
+    }
+  }
+
   return (
     <main className="mx-auto max-w-2xl px-4 py-10">
       <Link
@@ -130,6 +151,15 @@ export default async function LeaderboardDetailPage({
           <ol className="divide-y divide-gray-200 rounded-md border border-gray-200">
             {rows.map((r) => {
               const isYou = r.user_id === user.id;
+              // Admins and the row's owner see the raw display_name.
+              // Everyone else sees the visibility-rendered version.
+              const shownName =
+                isAdmin || isYou
+                  ? r.display_name
+                  : renderDisplayName(
+                      r.display_name,
+                      visibilityByUser.get(r.user_id) ?? "full",
+                    );
               return (
                 <li
                   key={r.user_id}
@@ -142,7 +172,7 @@ export default async function LeaderboardDetailPage({
                       {r.rank}
                     </span>
                     <span className="font-medium">
-                      {r.display_name}
+                      {shownName}
                       {isYou ? " (you)" : ""}
                     </span>
                   </div>

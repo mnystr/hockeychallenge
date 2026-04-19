@@ -21,29 +21,41 @@ export default async function TeamAdminDashboard({
   }
 
   const supabase = await createClient();
-  const [pendingCount, activeInvites, challengeCount, leaderboardCount] =
-    await Promise.all([
-      supabase
-        .from("memberships")
-        .select("id", { count: "exact", head: true })
-        .eq("team_id", ctx.teamId)
-        .eq("status", "pending")
-        .is("deleted_at", null),
-      supabase
-        .from("team_invites")
-        .select("id", { count: "exact", head: true })
-        .eq("team_id", ctx.teamId)
-        .is("revoked_at", null),
-      supabase
-        .from("challenge_audience")
-        .select("challenge_id", { count: "exact", head: true })
-        .eq("team_id", ctx.teamId),
-      supabase
-        .from("leaderboards")
-        .select("id", { count: "exact", head: true })
-        .eq("team_id", ctx.teamId)
-        .is("deleted_at", null),
-    ]);
+  const [
+    pendingMemberships,
+    pendingChanges,
+    activeInvites,
+    challengeCount,
+    leaderboardCount,
+  ] = await Promise.all([
+    supabase
+      .from("memberships")
+      .select("id", { count: "exact", head: true })
+      .eq("team_id", ctx.teamId)
+      .eq("status", "pending")
+      .is("deleted_at", null),
+    supabase
+      .from("profile_change_requests")
+      .select("id", { count: "exact", head: true })
+      .eq("team_id", ctx.teamId)
+      .eq("status", "pending"),
+    supabase
+      .from("team_invites")
+      .select("id", { count: "exact", head: true })
+      .eq("team_id", ctx.teamId)
+      .is("revoked_at", null),
+    supabase
+      .from("challenge_audience")
+      .select("challenge_id", { count: "exact", head: true })
+      .eq("team_id", ctx.teamId),
+    supabase
+      .from("leaderboards")
+      .select("id", { count: "exact", head: true })
+      .eq("team_id", ctx.teamId)
+      .is("deleted_at", null),
+  ]);
+  const totalPending =
+    (pendingMemberships.count ?? 0) + (pendingChanges.count ?? 0);
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-10">
@@ -59,7 +71,7 @@ export default async function TeamAdminDashboard({
         >
           <div className="font-semibold">Approvals</div>
           <div className="mt-1 text-sm text-gray-500">
-            {pendingCount.count ?? 0} pending
+            {totalPending} pending
           </div>
         </Link>
         <Link
