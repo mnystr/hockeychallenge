@@ -7,6 +7,7 @@ import {
 } from "@/lib/profiles/display-name";
 import { getT } from "@/lib/i18n/server";
 import { publicMediaUrl } from "@/lib/media/url";
+import { demoteMember, removeMember } from "../admin/actions";
 
 export default async function RosterPage({
   params,
@@ -57,12 +58,15 @@ export default async function RosterPage({
 
   const { data: roleRows } = await supabase
     .from("memberships")
-    .select("user_id, role, status")
+    .select("id, user_id, role, status")
     .eq("team_id", team.id)
     .is("deleted_at", null);
-  const roleByUser = new Map<string, { role: string; status: string }>();
+  const roleByUser = new Map<
+    string,
+    { id: string; role: string; status: string }
+  >();
   for (const r of roleRows ?? []) {
-    roleByUser.set(r.user_id, { role: r.role, status: r.status });
+    roleByUser.set(r.user_id, { id: r.id, role: r.role, status: r.status });
   }
 
   const visible = (profiles ?? []).filter((p) => {
@@ -88,7 +92,17 @@ export default async function RosterPage({
       >
         ← {team.name}
       </Link>
-      <h1 className="mb-6 text-3xl font-bold">{t("roster.title")}</h1>
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <h1 className="text-3xl font-bold">{t("roster.title")}</h1>
+        {isAdmin && (
+          <a
+            href={`/t/${slug}/admin/roster-export`}
+            className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            {t("roster.export_csv")}
+          </a>
+        )}
+      </div>
 
       {visible.length > 0 ? (
         <ul className="divide-y divide-gray-200 rounded-md border border-gray-200">
@@ -149,6 +163,40 @@ export default async function RosterPage({
                   </div>
                 </div>
                 </div>
+                {isAdmin && !isYou && (
+                  <div className="flex shrink-0 gap-2">
+                    {role === "team_admin" && (
+                      <form
+                        action={demoteMember.bind(
+                          null,
+                          slug,
+                          roleByUser.get(p.user_id)!.id,
+                        )}
+                      >
+                        <button
+                          type="submit"
+                          className="rounded-md border border-gray-300 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                        >
+                          {t("roster.demote")}
+                        </button>
+                      </form>
+                    )}
+                    <form
+                      action={removeMember.bind(
+                        null,
+                        slug,
+                        roleByUser.get(p.user_id)!.id,
+                      )}
+                    >
+                      <button
+                        type="submit"
+                        className="rounded-md border border-red-300 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-50"
+                      >
+                        {t("roster.remove")}
+                      </button>
+                    </form>
+                  </div>
+                )}
               </li>
             );
           })}

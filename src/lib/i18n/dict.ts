@@ -140,6 +140,10 @@ export const dict = {
       no_jersey: "Inget tröjnummer",
       admin_badge: "admin",
       profile_pending: "profil väntar",
+      demote: "Degradera",
+      remove: "Ta bort",
+      remove_confirm: "Ta bort {name} från laget?",
+      export_csv: "Exportera CSV",
     },
     profile: {
       title: "Din profil",
@@ -362,6 +366,10 @@ export const dict = {
       no_jersey: "No jersey number",
       admin_badge: "admin",
       profile_pending: "profile pending",
+      demote: "Demote",
+      remove: "Remove",
+      remove_confirm: "Remove {name} from the team?",
+      export_csv: "Export CSV",
     },
     profile: {
       title: "Your profile",

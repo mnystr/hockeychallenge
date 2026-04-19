@@ -135,3 +135,23 @@ export async function rejectProfileChange(
   if (error) throw new Error(error.message);
   revalidatePath(`/t/${slug}/admin/approvals`);
 }
+
+export async function demoteMember(slug: string, membershipId: string) {
+  await requireTeamAdmin(slug);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("demote_member", {
+    p_membership_id: membershipId,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath(`/t/${slug}/members`);
+}
+
+export async function removeMember(slug: string, membershipId: string) {
+  await requireTeamAdmin(slug);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("remove_member", {
+    p_membership_id: membershipId,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath(`/t/${slug}/members`);
+}
