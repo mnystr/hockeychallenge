@@ -78,7 +78,9 @@ export async function archiveLeaderboardAction(slug: string, id: string) {
     p_leaderboard_id: id,
   });
   if (error) throw new Error(error.message);
+  revalidatePath(`/t/${slug}/admin/leaderboards`);
   revalidatePath(`/t/${slug}/admin/leaderboards/${id}`);
+  revalidatePath(`/t/${slug}/leaderboards`);
   revalidatePath(`/t/${slug}/leaderboards/${id}`);
 }
 

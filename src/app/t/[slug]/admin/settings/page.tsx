@@ -72,9 +72,12 @@ export default async function SettingsPage({
                   <span className="font-semibold">
                     {t.name}
                     {selected && (
-                      <span className="ml-2 text-xs font-normal text-blue-600">
-                        (current)
-                      </span>
+                      <>
+                        {" "}
+                        <span className="text-xs font-normal text-blue-600">
+                          (current)
+                        </span>
+                      </>
                     )}
                   </span>
                   <div className="flex gap-1">

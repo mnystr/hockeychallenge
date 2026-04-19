@@ -41,9 +41,10 @@ test("theme swap + profile edit → admin approves → new name visible", async 
   await admin.waitForLoadState("networkidle");
 
   // After the POST the page reloads and "Midnight Rink" now carries "(current)".
-  await expect(
-    admin.getByRole("button").filter({ hasText: "Midnight Rink (current)" }),
-  ).toBeVisible();
+  const midnight = admin
+    .getByRole("button")
+    .filter({ hasText: "Midnight Rink" });
+  await expect(midnight).toContainText("(current)");
 
   // === Guardian: sign up + apply ===
   const guardianCtx = await browser.newContext();
