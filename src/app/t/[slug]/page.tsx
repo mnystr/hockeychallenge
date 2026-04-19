@@ -43,7 +43,12 @@ export default async function TeamPage({
     <main className="mx-auto max-w-2xl px-4 py-10">
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">{team.name}</h1>
+          <h1
+            className="text-3xl font-bold"
+            style={{ color: "var(--theme-primary, inherit)" }}
+          >
+            {team.name}
+          </h1>
           {team.status === "orphaned" && (
             <p className="mt-1 text-sm text-amber-600">
               This team has no active admin.
