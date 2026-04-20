@@ -21,15 +21,21 @@ export async function setTaskProgress(
   // Points leaderboards derive from challenge_completions, so a progress
   // update can move the actor up and push someone else down. Snapshot
   // standings for the challenge's audience teams before the mutation.
+  // Everything in this block is best-effort: a failure here must not
+  // block the task_progress upsert.
   const { data: audience } = await supabase
     .from("challenge_audience")
     .select("team_id")
     .eq("challenge_id", challengeId);
   const teamIds = (audience ?? []).map((a) => a.team_id);
   const before = new Map<string, Map<string, number>>();
-  for (const tid of teamIds) {
-    const snap = await snapshotStandings(tid);
-    for (const [boardId, ranks] of snap.entries()) before.set(boardId, ranks);
+  try {
+    for (const tid of teamIds) {
+      const snap = await snapshotStandings(tid);
+      for (const [boardId, ranks] of snap.entries()) before.set(boardId, ranks);
+    }
+  } catch (err) {
+    console.error("[challenges] snapshotStandings failed:", err);
   }
 
   const { error } = await supabase
@@ -41,13 +47,15 @@ export async function setTaskProgress(
 
   if (error) throw new Error(error.message);
 
-  for (const tid of teamIds) {
-    await notifyOvertakes({
-      teamId: tid,
-      teamSlug: slug,
-      actorUserId: user.id,
-      before,
-    });
+  if (before.size > 0) {
+    for (const tid of teamIds) {
+      await notifyOvertakes({
+        teamId: tid,
+        teamSlug: slug,
+        actorUserId: user.id,
+        before,
+      });
+    }
   }
 
   revalidatePath(`/t/${slug}/challenges/${challengeId}`);

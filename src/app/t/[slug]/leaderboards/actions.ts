@@ -34,7 +34,16 @@ export async function submitStandaloneEntry(
     .maybeSingle();
   const teamId = board?.team_id ?? null;
 
-  const before = teamId ? await snapshotStandings(teamId) : new Map();
+  // Overtake detection is best-effort — a snapshot failure must not
+  // block the entry upsert.
+  let before = new Map<string, Map<string, number>>();
+  if (teamId) {
+    try {
+      before = await snapshotStandings(teamId);
+    } catch (err) {
+      console.error("[leaderboards] snapshotStandings failed:", err);
+    }
+  }
 
   const { error } = await supabase
     .from("leaderboard_entries")
@@ -45,7 +54,7 @@ export async function submitStandaloneEntry(
 
   if (error) return { message: error.message };
 
-  if (teamId) {
+  if (teamId && before.size > 0) {
     await notifyOvertakes({
       teamId,
       teamSlug: slug,
