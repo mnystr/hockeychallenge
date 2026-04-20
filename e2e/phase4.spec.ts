@@ -105,11 +105,10 @@ test("admin demotes and removes a teammate", async ({ browser }) => {
   await admin.getByRole("button", { name: "Sign in" }).click();
   await admin.waitForURL("**/t/test-squad");
   await admin.goto("/t/test-squad/admin/approvals");
-  await admin
-    .locator("li")
-    .filter({ hasText: name })
-    .getByRole("button", { name: "Approve" })
-    .click();
+  const pendingRow = admin.locator("li").filter({ hasText: name });
+  await pendingRow.getByRole("button", { name: "Approve" }).click();
+  // Wait for the approval to commit so the member shows up in the roster.
+  await expect(pendingRow).toHaveCount(0);
 
   await admin.goto("/t/test-squad/members");
   const row = admin.locator("li").filter({ hasText: name });
