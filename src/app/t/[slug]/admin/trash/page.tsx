@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireTeamAdmin } from "@/lib/auth/session";
+import { getT } from "@/lib/i18n/server";
 import { restoreChallenge, restoreLeaderboard } from "./actions";
 
 export default async function TrashPage({
@@ -48,33 +49,38 @@ export default async function TrashPage({
     (deletedChallenges && deletedChallenges.length > 0) ||
     (deletedLeaderboards && deletedLeaderboards.length > 0);
 
+  const t = await getT();
+
   return (
-    <main className="mx-auto max-w-3xl px-4 py-10">
+    <main className="mx-auto w-full max-w-3xl px-4 py-8">
       <Link
         href={`/t/${slug}/admin`}
-        className="mb-2 inline-block text-sm text-blue-600 hover:underline"
+        className="mb-3 inline-block text-sm font-medium text-ui-primary hover:underline"
       >
-        ← Admin
+        {t("admin.back_admin")}
       </Link>
-      <h1 className="mb-1 text-3xl font-bold">Trash</h1>
-      <p className="mb-6 text-sm text-gray-500">
-        Soft-deleted items can be restored here. Nothing is permanently
-        removed from this UI.
-      </p>
+      <h1 className="mb-1 text-3xl font-extrabold tracking-tight">
+        {t("admin.trash.title")}
+      </h1>
+      <p className="mb-6 text-sm text-muted">{t("admin.trash.intro")}</p>
 
       {deletedChallenges && deletedChallenges.length > 0 && (
         <section className="mb-8">
-          <h2 className="mb-3 text-lg font-semibold">Challenges</h2>
-          <ul className="divide-y divide-gray-200 rounded-md border border-gray-200">
+          <h2 className="section-title mb-3">{t("admin.trash.challenges")}</h2>
+          <ul className="space-y-2">
             {deletedChallenges.map((c) => (
               <li
                 key={c.id}
-                className="flex items-center justify-between px-4 py-3 text-sm"
+                className="card card-pad flex items-center justify-between gap-3"
               >
-                <div>
-                  <div className="font-medium">{c.title || "(untitled)"}</div>
-                  <div className="text-xs text-gray-500">
-                    Deleted {new Date(c.deleted_at!).toLocaleString()}
+                <div className="min-w-0">
+                  <div className="font-semibold tracking-tight">
+                    {c.title || t("admin.trash.untitled")}
+                  </div>
+                  <div className="mt-0.5 text-xs text-muted">
+                    {t("admin.trash.deleted", {
+                      date: new Date(c.deleted_at!).toLocaleString(),
+                    })}
                   </div>
                 </div>
                 <form
@@ -83,8 +89,8 @@ export default async function TrashPage({
                     await restoreChallenge(slug, c.id);
                   }}
                 >
-                  <button className="rounded-md border border-gray-300 px-3 py-1 text-sm hover:bg-gray-50">
-                    Restore
+                  <button className="btn btn-secondary btn-sm">
+                    {t("admin.trash.restore")}
                   </button>
                 </form>
               </li>
@@ -95,17 +101,22 @@ export default async function TrashPage({
 
       {deletedLeaderboards && deletedLeaderboards.length > 0 && (
         <section>
-          <h2 className="mb-3 text-lg font-semibold">Leaderboards</h2>
-          <ul className="divide-y divide-gray-200 rounded-md border border-gray-200">
+          <h2 className="section-title mb-3">
+            {t("admin.trash.leaderboards")}
+          </h2>
+          <ul className="space-y-2">
             {deletedLeaderboards.map((l) => (
               <li
                 key={l.id}
-                className="flex items-center justify-between px-4 py-3 text-sm"
+                className="card card-pad flex items-center justify-between gap-3"
               >
-                <div>
-                  <div className="font-medium">{l.name}</div>
-                  <div className="text-xs text-gray-500">
-                    {l.kind} · deleted {new Date(l.deleted_at!).toLocaleString()}
+                <div className="min-w-0">
+                  <div className="font-semibold tracking-tight">{l.name}</div>
+                  <div className="mt-0.5 text-xs text-muted">
+                    {t("admin.trash.kind_deleted", {
+                      kind: l.kind,
+                      date: new Date(l.deleted_at!).toLocaleString(),
+                    })}
                   </div>
                 </div>
                 <form
@@ -114,8 +125,8 @@ export default async function TrashPage({
                     await restoreLeaderboard(slug, l.id);
                   }}
                 >
-                  <button className="rounded-md border border-gray-300 px-3 py-1 text-sm hover:bg-gray-50">
-                    Restore
+                  <button className="btn btn-secondary btn-sm">
+                    {t("admin.trash.restore")}
                   </button>
                 </form>
               </li>
@@ -124,7 +135,11 @@ export default async function TrashPage({
         </section>
       )}
 
-      {!anything && <p className="text-sm text-gray-500">Trash is empty.</p>}
+      {!anything && (
+        <p className="card card-pad text-sm text-muted">
+          {t("admin.trash.empty")}
+        </p>
+      )}
     </main>
   );
 }

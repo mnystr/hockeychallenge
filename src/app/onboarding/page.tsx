@@ -30,8 +30,6 @@ export default async function OnboardingPage() {
         display_name_ph: t("onboarding.display_name_ph"),
         display_name_hint: t("onboarding.display_name_hint"),
         jersey_number: t("onboarding.jersey_number"),
-        pronouns: t("onboarding.pronouns"),
-        pronouns_ph: t("onboarding.pronouns_ph"),
         apply_join: t("onboarding.apply_join"),
         apply_join_pending: t("onboarding.apply_join_pending"),
         team_name: t("onboarding.team_name"),

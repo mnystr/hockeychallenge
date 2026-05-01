@@ -20,7 +20,6 @@ export async function submitProfileChange(
   const parsed = profileChangeSchema.safeParse({
     display_name: s("display_name"),
     jersey_number: s("jersey_number"),
-    pronouns: s("pronouns"),
     visibility: s("visibility"),
   });
 
@@ -60,7 +59,9 @@ export async function submitProfileChange(
     p_profile_id: profileId,
     p_display_name: parsed.data.display_name || null,
     p_jersey_number: parsed.data.jersey_number,
-    p_pronouns: parsed.data.pronouns || null,
+    // Legacy column the schema still defines; we no longer collect it
+    // but pass null explicitly so PostgREST resolves the overload.
+    p_pronouns: null,
     p_visibility: parsed.data.visibility,
     p_picture_path: picturePath,
   });

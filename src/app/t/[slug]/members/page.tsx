@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -7,6 +6,8 @@ import {
 } from "@/lib/profiles/display-name";
 import { getT } from "@/lib/i18n/server";
 import { publicMediaUrl } from "@/lib/media/url";
+import { Users } from "@/components/icons";
+import TeamShell from "@/components/TeamShell";
 import { demoteMember, removeMember } from "../admin/actions";
 
 export default async function RosterPage({
@@ -51,7 +52,7 @@ export default async function RosterPage({
   const { data: profiles } = await supabase
     .from("profiles")
     .select(
-      "user_id, display_name, jersey_number, pronouns, visibility, approved, profile_picture_path",
+      "user_id, display_name, jersey_number, visibility, approved, profile_picture_path",
     )
     .eq("team_id", team.id)
     .is("deleted_at", null);
@@ -85,27 +86,37 @@ export default async function RosterPage({
   const t = await getT();
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-10">
-      <Link
-        href={`/t/${slug}`}
-        className="mb-2 inline-block text-sm text-blue-600 hover:underline"
-      >
-        ← {team.name}
-      </Link>
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold">{t("roster.title")}</h1>
-        {isAdmin && (
-          <a
-            href={`/t/${slug}/admin/roster-export`}
-            className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-          >
-            {t("roster.export_csv")}
-          </a>
-        )}
-      </div>
+    <>
+      <TeamShell slug={slug} active="members" />
+      <main className="mx-auto w-full max-w-3xl px-4 py-6">
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <header className="flex items-center gap-3">
+            <span
+              className="grid h-10 w-10 place-items-center rounded-xl"
+              style={{
+                background:
+                  "color-mix(in oklab, var(--ui-primary) 14%, var(--surface))",
+                color: "color-mix(in oklab, var(--ui-primary) 75%, black)",
+              }}
+            >
+              <Users className="h-5 w-5" />
+            </span>
+            <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
+              {t("roster.title")}
+            </h1>
+          </header>
+          {isAdmin && (
+            <a
+              href={`/t/${slug}/admin/roster-export`}
+              className="btn btn-secondary btn-sm"
+            >
+              {t("roster.export_csv")}
+            </a>
+          )}
+        </div>
 
       {visible.length > 0 ? (
-        <ul className="divide-y divide-gray-200 rounded-md border border-gray-200">
+        <ul className="space-y-1.5">
           {visible.map((p) => {
             const isYou = p.user_id === user.id;
             const shown =
@@ -113,8 +124,6 @@ export default async function RosterPage({
                 ? p.display_name
                 : renderDisplayName(p.display_name, p.visibility as Visibility);
             const role = roleByUser.get(p.user_id)?.role;
-            // Players with visibility=initials also hide their photo from
-            // non-admin teammates. Admins and the owner always see it.
             const photoVisible =
               isAdmin || isYou || p.visibility !== "initials";
             const photoUrl = photoVisible
@@ -123,45 +132,54 @@ export default async function RosterPage({
             return (
               <li
                 key={p.user_id}
-                className={`flex items-center justify-between gap-3 px-4 py-3 text-sm ${
-                  isYou ? "bg-blue-50" : ""
-                }`}
+                className="card flex items-center justify-between gap-3 px-3 py-2"
+                style={
+                  isYou
+                    ? {
+                        borderColor:
+                          "color-mix(in oklab, var(--ui-primary) 45%, transparent)",
+                        background:
+                          "linear-gradient(90deg, color-mix(in oklab, var(--ui-primary) 10%, var(--surface)) 0%, var(--surface) 60%)",
+                      }
+                    : undefined
+                }
               >
-                <div className="flex items-center gap-3">
-                {photoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={photoUrl}
-                    alt=""
-                    className="h-10 w-10 shrink-0 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-medium text-gray-400">
-                    {shown.slice(0, 1).toUpperCase()}
-                  </div>
-                )}
-                <div>
-                  <div className="font-medium">
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  {photoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={photoUrl}
+                      alt=""
+                      className="avatar avatar-sm object-cover"
+                    />
+                  ) : (
+                    <div className="avatar avatar-sm">
+                      {shown.slice(0, 1).toUpperCase()}
+                    </div>
+                  )}
+                  {p.jersey_number !== null && (
+                    <span className="mono w-8 shrink-0 text-right text-sm font-bold text-muted-2">
+                      #{p.jersey_number}
+                    </span>
+                  )}
+                  <span className="min-w-0 truncate font-semibold tracking-tight">
                     {shown}
-                    {isYou && (
-                      <span className="ml-1 text-gray-500">
-                        {t("leaderboards.you")}
-                      </span>
-                    )}
-                    {role === "team_admin" && (
-                      <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
-                        {t("roster.admin_badge")}
-                      </span>
-                    )}
-                  </div>
-                  <div className="mt-0.5 text-xs text-gray-500">
-                    {p.jersey_number !== null
-                      ? `#${p.jersey_number}`
-                      : t("roster.no_jersey")}
-                    {p.pronouns ? ` · ${p.pronouns}` : ""}
-                    {isAdmin && !p.approved && ` · ${t("roster.profile_pending")}`}
-                  </div>
-                </div>
+                  </span>
+                  {isYou && (
+                    <span className="shrink-0 text-xs text-muted">
+                      {t("leaderboards.you")}
+                    </span>
+                  )}
+                  {role === "team_admin" && (
+                    <span className="pill pill-primary shrink-0">
+                      {t("roster.admin_badge")}
+                    </span>
+                  )}
+                  {isAdmin && !p.approved && (
+                    <span className="shrink-0 text-xs text-muted">
+                      {t("roster.profile_pending")}
+                    </span>
+                  )}
                 </div>
                 {isAdmin && !isYou && (
                   <div className="flex shrink-0 gap-2">
@@ -173,10 +191,7 @@ export default async function RosterPage({
                           roleByUser.get(p.user_id)!.id,
                         )}
                       >
-                        <button
-                          type="submit"
-                          className="rounded-md border border-gray-300 px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
-                        >
+                        <button type="submit" className="btn btn-secondary btn-sm">
                           {t("roster.demote")}
                         </button>
                       </form>
@@ -188,10 +203,7 @@ export default async function RosterPage({
                         roleByUser.get(p.user_id)!.id,
                       )}
                     >
-                      <button
-                        type="submit"
-                        className="rounded-md border border-red-300 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-50"
-                      >
+                      <button type="submit" className="btn btn-danger btn-sm">
                         {t("roster.remove")}
                       </button>
                     </form>
@@ -201,9 +213,10 @@ export default async function RosterPage({
             );
           })}
         </ul>
-      ) : (
-        <p className="text-sm text-gray-500">{t("roster.empty")}</p>
-      )}
-    </main>
+        ) : (
+          <p className="card card-pad text-sm text-muted">{t("roster.empty")}</p>
+        )}
+      </main>
+    </>
   );
 }

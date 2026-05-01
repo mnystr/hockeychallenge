@@ -1,26 +1,1014 @@
 @import "tailwindcss";
 
+/* =====================================================================
+ * Design tokens — base palette, fallbacks for pages without team theme.
+ * Team pages override the --theme-* tokens via TeamLayout (server-side).
+ * Everything below references --theme-* with safe fallbacks so the same
+ * components render correctly in both scopes.
+ * =================================================================== */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Neutral surfaces (used everywhere, including admin/super-admin) */
+  --background: #f6f7fb;
+  --surface: #ffffff;
+  --surface-2: #f1f3f9;
+  --surface-3: #e7eaf3;
+  --foreground: #0f172a;
+  --muted: #5b6478;
+  --muted-2: #8a93a6;
+  --border: #e2e6ef;
+  --border-strong: #c8cee0;
+  --ring: #2563eb;
+
+  /* Brand fallback (used when no team theme is active) */
+  --brand-primary: #1e3a8a;
+  --brand-secondary: #e5e7eb;
+  --brand-accent: #f59e0b;
+
+  /* Semantic */
+  --success: #16a34a;
+  --success-bg: #ecfdf5;
+  --success-fg: #14532d;
+  --warning: #b45309;
+  --warning-bg: #fff7ed;
+  --warning-fg: #7c2d12;
+  --danger: #b91c1c;
+  --danger-bg: #fef2f2;
+  --danger-fg: #7f1d1d;
+
+  /* Podium (gold/silver/bronze) */
+  --gold: #f6c84c;
+  --gold-2: #d39812;
+  --silver: #c8d1dc;
+  --silver-2: #8e9aac;
+  --bronze: #d18a55;
+  --bronze-2: #8a4d28;
+
+  /* Effective theme tokens — resolved in cascade so components can just
+   * reference var(--ui-primary) without worrying about whether a team
+   * theme is active. */
+  --ui-primary: var(--theme-primary, var(--brand-primary));
+  --ui-secondary: var(--theme-secondary, var(--brand-secondary));
+  --ui-accent: var(--theme-accent, var(--brand-accent));
+  --ui-bg: var(--theme-bg, var(--background));
+  --ui-fg: var(--theme-fg, var(--foreground));
+
+  /* Geometry */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 1px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 12px -2px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.06);
+  --shadow-lg: 0 16px 40px -8px rgba(15, 23, 42, 0.18), 0 6px 12px -4px rgba(15, 23, 42, 0.08);
+  --shadow-glow: 0 0 0 4px color-mix(in oklab, var(--ui-primary) 18%, transparent);
 }
+
+/* Team pages re-declare --ui-* against --theme-* so all child components
+ * inherit consistently even when a team has a dark theme. */
+.team-theme-scope {
+  --ui-primary: var(--theme-primary, var(--brand-primary));
+  --ui-secondary: var(--theme-secondary, var(--brand-secondary));
+  --ui-accent: var(--theme-accent, var(--brand-accent));
+  --ui-bg: var(--theme-bg, var(--background));
+  --ui-fg: var(--theme-fg, var(--foreground));
+}
+
+/* When a team has a dark theme (--theme-bg is dark), invert surfaces.
+ * We detect this by computing contrast against fg in CSS via color-mix
+ * fallback: opt-in via .team-theme-scope[data-dark] later if needed.
+ * For now, components that need to adapt use color-mix() on --ui-bg. */
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* =====================================================================
+ * Base
+ * =================================================================== */
+
+html, body {
+  background: var(--background);
+  color: var(--foreground);
 }
 
 body {
-  background: var(--background);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Subtle ambient backdrop on team pages — a soft radial wash using the
+ * team's primary + accent. Sits behind everything, decorative only. */
+.team-theme-scope {
+  background:
+    radial-gradient(900px 480px at 12% -10%, color-mix(in oklab, var(--ui-primary) 12%, transparent), transparent 65%),
+    radial-gradient(700px 420px at 110% 0%, color-mix(in oklab, var(--ui-accent) 10%, transparent), transparent 60%),
+    var(--background);
+  min-height: 100%;
+}
+
+/* Smooth focus ring — applied to all focusable UI inside team scope */
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px color-mix(in oklab, var(--ui-primary) 70%, white);
+  border-radius: 0.5rem;
+}
+
+/* =====================================================================
+ * Reusable component classes (kept intentionally small & composable)
+ * =================================================================== */
+
+/* --- Buttons ---------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  line-height: 1.2;
+  border: 1px solid transparent;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    transform 120ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+  white-space: nowrap;
+}
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.btn:not(:disabled):active { transform: translateY(1px); }
+
+.btn-primary {
+  background: linear-gradient(180deg,
+    color-mix(in oklab, var(--ui-primary) 100%, white 0%) 0%,
+    color-mix(in oklab, var(--ui-primary) 88%, black 12%) 100%);
+  color: #fff;
+  box-shadow:
+    0 1px 0 color-mix(in oklab, var(--ui-primary) 50%, white) inset,
+    0 6px 16px -6px color-mix(in oklab, var(--ui-primary) 60%, transparent);
+}
+.btn-primary:not(:disabled):hover {
+  background: linear-gradient(180deg,
+    color-mix(in oklab, var(--ui-primary) 95%, white 5%),
+    color-mix(in oklab, var(--ui-primary) 80%, black 20%));
+  box-shadow:
+    0 1px 0 color-mix(in oklab, var(--ui-primary) 60%, white) inset,
+    0 10px 24px -8px color-mix(in oklab, var(--ui-primary) 60%, transparent);
+}
+
+.btn-secondary {
+  background: var(--surface);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  border-color: var(--border);
+  box-shadow: var(--shadow-sm);
+}
+.btn-secondary:not(:disabled):hover {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--foreground);
+}
+.btn-ghost:not(:disabled):hover {
+  background: color-mix(in oklab, var(--ui-primary) 8%, transparent);
+}
+
+.btn-danger {
+  background: var(--surface);
+  color: var(--danger);
+  border-color: color-mix(in oklab, var(--danger) 35%, transparent);
+}
+.btn-danger:not(:disabled):hover {
+  background: var(--danger-bg);
+  border-color: color-mix(in oklab, var(--danger) 55%, transparent);
+}
+
+.btn-sm { padding: 0.35rem 0.7rem; font-size: 0.8125rem; border-radius: var(--radius-sm); }
+.btn-lg { padding: 0.85rem 1.5rem; font-size: 1rem; border-radius: var(--radius-md); }
+.btn-xl {
+  padding: 1.05rem 1.75rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  border-radius: var(--radius-lg);
+  letter-spacing: -0.01em;
+}
+
+/* Big "+1" tap button used on counted tasks. Designed for kid-finger taps. */
+.btn-plus {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 3.25rem;
+  min-width: 8rem;
+  padding: 0 1.5rem;
+  border-radius: 999px;
+  background: linear-gradient(180deg,
+    color-mix(in oklab, var(--ui-accent) 100%, white 0%),
+    color-mix(in oklab, var(--ui-accent) 80%, black 20%));
+  color: #fff;
+  font-weight: 800;
+  font-size: 1.1rem;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 0 color-mix(in oklab, var(--ui-accent) 50%, black 50%);
+  box-shadow:
+    0 1px 0 color-mix(in oklab, var(--ui-accent) 60%, white) inset,
+    0 8px 18px -6px color-mix(in oklab, var(--ui-accent) 65%, transparent);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: transform 120ms ease, filter 160ms ease, box-shadow 160ms ease;
+}
+.btn-plus:disabled,
+.btn-plus[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.btn-plus:not(:disabled):hover {
+  filter: brightness(1.04);
+  transform: translateY(-1px);
+}
+.btn-plus:not(:disabled):active {
+  transform: translateY(1px) scale(0.98);
+}
+/* Wide variant for places where the +1 deserves to dominate the row. */
+.btn-plus.btn-plus-wide {
+  min-width: 11rem;
+  height: 3.5rem;
+  font-size: 1.2rem;
+}
+/* Stretch to its container's full width — used inside narrow cards. */
+.btn-plus.btn-plus-block {
+  width: 100%;
+}
+
+/* --- Cards ------------------------------------------------------------ */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+.card-pad { padding: 1.25rem; }
+.card-pad-lg { padding: 1.75rem; }
+.card-hover {
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: color-mix(in oklab, var(--ui-primary) 30%, var(--border));
+}
+.card-link { display: block; color: inherit; text-decoration: none; }
+
+/* --- Inputs ----------------------------------------------------------- */
+.input,
+.select,
+.textarea {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.6rem 0.85rem;
+  font-size: 0.9rem;
+  color: var(--foreground);
+  transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+}
+.input:hover, .select:hover, .textarea:hover { border-color: var(--border-strong); }
+.input:focus, .select:focus, .textarea:focus {
+  border-color: var(--ui-primary);
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--ui-primary) 18%, transparent);
+  outline: none;
+}
+.input-mono { font-family: var(--font-geist-mono), ui-monospace, monospace; }
+.label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  margin-bottom: 0.35rem;
+}
+.hint { font-size: 0.75rem; color: var(--muted-2); margin-top: 0.3rem; }
+.field-error { font-size: 0.8rem; color: var(--danger); margin-top: 0.3rem; }
+
+/* --- Badges / pills --------------------------------------------------- */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--surface-2);
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+.pill-primary {
+  background: color-mix(in oklab, var(--ui-primary) 14%, transparent);
+  color: color-mix(in oklab, var(--ui-primary) 75%, black);
+  border-color: color-mix(in oklab, var(--ui-primary) 30%, transparent);
+}
+.pill-accent {
+  background: color-mix(in oklab, var(--ui-accent) 18%, transparent);
+  color: color-mix(in oklab, var(--ui-accent) 70%, black);
+  border-color: color-mix(in oklab, var(--ui-accent) 36%, transparent);
+}
+.pill-success {
+  background: var(--success-bg);
+  color: var(--success-fg);
+  border-color: color-mix(in oklab, var(--success) 30%, transparent);
+}
+.pill-warning {
+  background: var(--warning-bg);
+  color: var(--warning-fg);
+  border-color: color-mix(in oklab, var(--warning) 30%, transparent);
+}
+.pill-danger {
+  background: var(--danger-bg);
+  color: var(--danger-fg);
+  border-color: color-mix(in oklab, var(--danger) 30%, transparent);
+}
+
+/* --- Hero gradient panel --------------------------------------------- */
+.hero-panel {
+  position: relative;
+  padding: 2rem 1.5rem;
+  border-radius: var(--radius-xl);
+  background:
+    linear-gradient(135deg,
+      color-mix(in oklab, var(--ui-primary) 95%, white 5%) 0%,
+      color-mix(in oklab, var(--ui-primary) 70%, black 10%) 55%,
+      color-mix(in oklab, var(--ui-accent) 80%, black 15%) 100%);
+  color: #fff;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+.hero-panel::before {
+  content: "";
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(280px 180px at 12% 18%, rgba(255,255,255,0.18), transparent 60%),
+    radial-gradient(360px 220px at 88% 86%, rgba(255,255,255,0.12), transparent 60%);
+  pointer-events: none;
+}
+.hero-panel::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  background:
+    repeating-linear-gradient( 45deg, rgba(255,255,255,0.05) 0 2px, transparent 2px 6px);
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+.hero-panel > * { position: relative; z-index: 1; }
+
+/* Photo variant: image drives panel height; stripe + radial pseudos overlay
+   the image; title bar sits on top inside a thin gradient frame. */
+.hero-panel--photo {
+  padding: 6px;
+}
+.hero-panel--photo > .hero-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 18rem;
+  border-radius: calc(var(--radius-xl) - 6px);
+  object-fit: cover;
+  z-index: 0;
+}
+.hero-panel--photo::before,
+.hero-panel--photo::after {
+  z-index: 1;
+}
+
+/* --- Progress ------------------------------------------------------- */
+.progress {
+  position: relative;
+  height: 0.65rem;
+  width: 100%;
+  background: var(--surface-3);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.progress > .progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg,
+    color-mix(in oklab, var(--ui-primary) 90%, white 0%),
+    color-mix(in oklab, var(--ui-accent) 70%, white 0%));
+  border-radius: 999px;
+  transition: width 380ms cubic-bezier(.2,.8,.2,1);
+  box-shadow: 0 0 12px -2px color-mix(in oklab, var(--ui-primary) 60%, transparent);
+}
+.progress > .progress-fill.is-complete {
+  background: linear-gradient(90deg, #16a34a, #4ade80);
+  box-shadow: 0 0 14px -2px rgba(22, 163, 74, 0.55);
+}
+
+/* Striped animated overlay while in flight */
+.progress > .progress-fill.is-pending::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(255,255,255,0.18) 0 8px,
+    transparent 8px 16px
+  );
+  animation: progress-stripes 0.9s linear infinite;
+}
+@keyframes progress-stripes {
+  from { background-position: 0 0; }
+  to { background-position: 24px 0; }
+}
+
+/* --- Compact team shell (header + nav row on every team page) ------ */
+.team-shell-hero {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.7rem 1rem;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg,
+    color-mix(in oklab, var(--ui-primary) 95%, white 5%) 0%,
+    color-mix(in oklab, var(--ui-primary) 75%, black 5%) 60%,
+    color-mix(in oklab, var(--ui-accent) 75%, black 10%) 100%);
+  color: #fff;
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  isolation: isolate;
+}
+.team-shell-hero::before {
+  content: "";
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(220px 120px at 8% 10%, rgba(255,255,255,0.18), transparent 60%);
+  pointer-events: none;
+}
+.team-shell-hero > * { position: relative; z-index: 1; }
+
+.team-shell-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-decoration: none;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: background 140ms ease, transform 120ms ease;
+}
+.team-shell-chip:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.team-shell-nav {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.3rem;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.team-shell-tab {
+  flex: 1 1 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--muted);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 140ms ease, color 140ms ease, transform 120ms ease;
+}
+.team-shell-tab:hover {
+  background: var(--surface-2);
+  color: var(--foreground);
+}
+.team-shell-tab.is-active {
+  background: linear-gradient(180deg,
+    color-mix(in oklab, var(--ui-primary) 100%, white 0%) 0%,
+    color-mix(in oklab, var(--ui-primary) 88%, black 12%) 100%);
+  color: #fff;
+  box-shadow:
+    0 1px 0 color-mix(in oklab, var(--ui-primary) 50%, white) inset,
+    0 6px 14px -6px color-mix(in oklab, var(--ui-primary) 60%, transparent);
+}
+.team-shell-tab.is-active:hover {
+  filter: brightness(1.04);
+  color: #fff;
+}
+@media (max-width: 480px) {
+  .team-shell-tab {
+    font-size: 0.78rem;
+    padding: 0.4rem 0.55rem;
+  }
+}
+
+/* --- Page chrome (header / nav) ------------------------------------- */
+.page-shell { display: flex; flex-direction: column; min-height: 100%; }
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  backdrop-filter: saturate(160%) blur(12px);
+  -webkit-backdrop-filter: saturate(160%) blur(12px);
+  background: color-mix(in oklab, var(--surface) 88%, transparent);
+  border-bottom: 1px solid var(--border);
+}
+.app-header-row {
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: 0.7rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* --- Top-3 podium ---------------------------------------------------- */
+.podium {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1.15fr 1fr;
+  gap: 0.6rem;
+  align-items: end;
+}
+.podium-card {
+  position: relative;
+  text-align: center;
+  padding: 1.25rem 0.8rem 1rem;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  isolation: isolate;
+}
+.podium-card .podium-medal {
+  width: 3.25rem;
+  height: 3.25rem;
+  margin: 0 auto 0.55rem;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  position: relative;
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: #fff;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.3);
+}
+.podium-card .podium-medal::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 999px;
+  background: conic-gradient(from 90deg,
+    color-mix(in oklab, currentColor 30%, transparent),
+    transparent 25%,
+    color-mix(in oklab, currentColor 30%, transparent) 50%,
+    transparent 75%,
+    color-mix(in oklab, currentColor 30%, transparent));
+  filter: blur(7px);
+  opacity: 0.7;
+  z-index: -1;
+  animation: medal-spin 5s linear infinite;
+}
+@keyframes medal-spin { to { transform: rotate(360deg); } }
+
+.podium-1 {
+  grid-column: 2;
+  order: 2;
+  padding-top: 1.6rem;
+  padding-bottom: 1.5rem;
+  background:
+    linear-gradient(180deg,
+      color-mix(in oklab, var(--gold) 14%, var(--surface)) 0%,
+      var(--surface) 60%);
+  border-color: color-mix(in oklab, var(--gold) 50%, transparent);
+  box-shadow:
+    0 12px 28px -8px color-mix(in oklab, var(--gold) 45%, transparent),
+    var(--shadow-md);
+}
+.podium-1 .podium-medal {
+  background: radial-gradient(circle at 30% 30%, #fff5c8, var(--gold) 45%, var(--gold-2));
+  color: #5a3b00;
+}
+.podium-1 .podium-trophy {
+  width: 2.4rem; height: 2.4rem; margin: 0 auto;
+  color: var(--gold-2);
+  filter: drop-shadow(0 4px 10px color-mix(in oklab, var(--gold) 60%, transparent));
+  animation: trophy-bob 2.6s ease-in-out infinite;
+}
+@keyframes trophy-bob {
+  0%,100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-4px) rotate(3deg); }
+}
+
+.podium-2 {
+  grid-column: 1;
+  order: 1;
+  background: linear-gradient(180deg,
+    color-mix(in oklab, var(--silver) 22%, var(--surface)) 0%,
+    var(--surface) 65%);
+  border-color: color-mix(in oklab, var(--silver) 55%, transparent);
+}
+.podium-2 .podium-medal {
+  background: radial-gradient(circle at 30% 30%, #fff, var(--silver) 50%, var(--silver-2));
+  color: #2d3748;
+}
+
+.podium-3 {
+  grid-column: 3;
+  order: 3;
+  background: linear-gradient(180deg,
+    color-mix(in oklab, var(--bronze) 14%, var(--surface)) 0%,
+    var(--surface) 65%);
+  border-color: color-mix(in oklab, var(--bronze) 45%, transparent);
+}
+.podium-3 .podium-medal {
+  background: radial-gradient(circle at 30% 30%, #ffe1c7, var(--bronze) 50%, var(--bronze-2));
+  color: #4a1f00;
+}
+
+.podium-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
+  word-break: break-word;
+}
+.podium-value {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin-top: 0.2rem;
+  color: var(--ui-primary);
+}
+.podium-card.is-you::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px solid color-mix(in oklab, var(--ui-primary) 65%, transparent);
+  pointer-events: none;
+  animation: you-pulse 2.4s ease-in-out infinite;
+}
+@keyframes you-pulse {
+  0%,100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--ui-primary) 35%, transparent); }
+  50% { box-shadow: 0 0 0 6px color-mix(in oklab, var(--ui-primary) 0%, transparent); }
+}
+
+/* --- Standings rows (4..N) ------------------------------------------ */
+.standings-list { display: flex; flex-direction: column; gap: 0.35rem; }
+.standings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+}
+.standings-row:hover { transform: translateX(2px); border-color: var(--border-strong); }
+.standings-row.is-you {
+  border-color: color-mix(in oklab, var(--ui-primary) 45%, transparent);
+  background:
+    linear-gradient(90deg,
+      color-mix(in oklab, var(--ui-primary) 10%, var(--surface)) 0%,
+      var(--surface) 60%);
+  box-shadow:
+    0 0 0 2px color-mix(in oklab, var(--ui-primary) 18%, transparent),
+    var(--shadow-sm);
+}
+.standings-rank {
+  width: 1.9rem; height: 1.9rem;
+  display: grid; place-items: center;
+  background: var(--surface-2);
+  border-radius: 999px;
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+  flex: 0 0 auto;
+}
+.standings-row.is-you .standings-rank {
+  background: var(--ui-primary);
+  color: #fff;
+}
+.standings-name { font-weight: 600; letter-spacing: -0.005em; }
+.standings-value {
+  font-family: var(--font-geist-mono), monospace;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ui-fg);
+}
+
+/* --- Avatar ---------------------------------------------------------- */
+.avatar {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface-2);
+  display: grid; place-items: center;
+  font-weight: 700;
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+.avatar-sm { width: 2rem; height: 2rem; font-size: 0.75rem; }
+.avatar-md { width: 2.5rem; height: 2.5rem; font-size: 0.85rem; }
+.avatar-lg { width: 3.5rem; height: 3.5rem; font-size: 1rem; }
+
+/* --- Misc utilities -------------------------------------------------- */
+.mono { font-family: var(--font-geist-mono), ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.section-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.divider {
+  height: 1px;
+  background: var(--border);
+  border: 0;
+  margin: 1.5rem 0;
+}
+
+.bg-app { background: var(--background); }
+.text-muted { color: var(--muted); }
+.text-muted-2 { color: var(--muted-2); }
+.text-app-fg { color: var(--foreground); }
+.text-ui-primary { color: var(--ui-primary); }
+.text-ui-accent { color: var(--ui-accent); }
+.bg-ui-primary { background: var(--ui-primary); }
+.bg-ui-accent { background: var(--ui-accent); }
+
+/* Sparkles for celebratory moments */
+.sparkle {
+  position: absolute;
+  width: 8px; height: 8px;
+  background: var(--ui-accent);
+  border-radius: 999px;
+  filter: blur(0.5px);
+  animation: sparkle-fall 1200ms ease-out forwards;
+  pointer-events: none;
+}
+@keyframes sparkle-fall {
+  0% { transform: translate(0, 0) scale(0.3); opacity: 1; }
+  100% { transform: translate(var(--dx, 0), var(--dy, -40px)) scale(1); opacity: 0; }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .podium-card .podium-medal::after,
+  .podium-1 .podium-trophy,
+  .podium-card.is-you::after,
+  .progress > .progress-fill.is-pending::after {
+    animation: none;
+  }
+}
+
+/* =====================================================================
+ * Challenge cards — prominent hero-style cards used in the challenges
+ * list. Each card derives its gradient + accent from CSS custom props
+ * (--ch-from / --ch-to / --ch-accent). The eight presets defined below
+ * supply concrete colors. NULL theme falls back to the team's tokens.
+ * =================================================================== */
+
+.challenge-card {
+  /* defaults — match the team theme when no preset is chosen */
+  --ch-from: var(--ui-primary);
+  --ch-to: var(--ui-accent);
+  --ch-accent: var(--ui-accent);
+  --ch-fg: #ffffff;
+
+  position: relative;
+  display: block;
+  border-radius: var(--radius-xl);
+  padding: 1.5rem 1.6rem;
+  color: var(--ch-fg);
+  background:
+    linear-gradient(135deg,
+      color-mix(in oklab, var(--ch-from) 95%, white 5%) 0%,
+      color-mix(in oklab, var(--ch-from) 70%, black 10%) 55%,
+      color-mix(in oklab, var(--ch-to) 80%, black 15%) 100%);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  isolation: isolate;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+  text-decoration: none;
+}
+.challenge-card::before {
+  content: "";
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(280px 180px at 12% 18%, rgba(255,255,255,0.18), transparent 60%),
+    radial-gradient(360px 220px at 88% 86%, rgba(255,255,255,0.12), transparent 60%);
+  pointer-events: none;
+}
+.challenge-card::after {
+  content: "";
+  position: absolute; inset: -2px;
+  background: repeating-linear-gradient(45deg,
+    rgba(255,255,255,0.05) 0 2px, transparent 2px 6px);
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+.challenge-card > * { position: relative; z-index: 1; }
+.challenge-card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 20px 50px -10px color-mix(in oklab, var(--ch-from) 50%, transparent),
+    var(--shadow-lg);
+}
+
+.challenge-card-progress {
+  position: relative;
+  height: 0.6rem;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+.challenge-card-progress > .progress-fill {
+  height: 100%;
+  background: #fff;
+  border-radius: 999px;
+  transition: width 380ms cubic-bezier(.2,.8,.2,1);
+}
+.challenge-card-progress > .progress-fill.is-complete {
+  background: linear-gradient(90deg, #16a34a, #4ade80);
+}
+
+/* Preset palettes -------------------------------------------------- */
+.challenge-card[data-theme="aurora"] {
+  --ch-from: #6d28d9;
+  --ch-to: #06b6d4;
+  --ch-accent: #f0abfc;
+}
+.challenge-card[data-theme="inferno"] {
+  --ch-from: #b91c1c;
+  --ch-to: #f59e0b;
+  --ch-accent: #fde68a;
+}
+.challenge-card[data-theme="glacier"] {
+  --ch-from: #0e7490;
+  --ch-to: #67e8f9;
+  --ch-accent: #ecfeff;
+  --ch-fg: #03363d;
+}
+.challenge-card[data-theme="forest"] {
+  --ch-from: #047857;
+  --ch-to: #84cc16;
+  --ch-accent: #ecfccb;
+}
+.challenge-card[data-theme="sunset"] {
+  --ch-from: #f97316;
+  --ch-to: #ec4899;
+  --ch-accent: #ffe4e6;
+}
+.challenge-card[data-theme="lightning"] {
+  --ch-from: #1f2937;
+  --ch-to: #facc15;
+  --ch-accent: #fde68a;
+}
+.challenge-card[data-theme="royal"] {
+  --ch-from: #4c1d95;
+  --ch-to: #f59e0b;
+  --ch-accent: #fde68a;
+}
+.challenge-card[data-theme="ocean"] {
+  --ch-from: #0c4a6e;
+  --ch-to: #38bdf8;
+  --ch-accent: #e0f2fe;
+}
+
+/* Theme picker swatches used inside the challenge form. */
+.theme-swatch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
+  gap: 0.6rem;
+}
+.theme-swatch {
+  position: relative;
+  display: flex;
+  align-items: end;
+  height: 4rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: var(--radius-md);
+  border: 2px solid transparent;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.35);
+  background: linear-gradient(135deg, var(--ch-from), var(--ch-to));
+  overflow: hidden;
+  transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+  text-align: left;
+}
+.theme-swatch::before {
+  content: "";
+  position: absolute; inset: 0;
+  background: radial-gradient(80px 60px at 30% 20%, rgba(255,255,255,0.25), transparent 70%);
+  pointer-events: none;
+}
+.theme-swatch:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+.theme-swatch.is-selected {
+  border-color: #fff;
+  box-shadow: 0 0 0 3px var(--ui-primary), var(--shadow-md);
+}
+.theme-swatch[data-theme="default"] {
+  background: linear-gradient(135deg, var(--ui-primary), var(--ui-accent));
+  color: #fff;
+}
+.theme-swatch[data-theme="aurora"]   { --ch-from:#6d28d9; --ch-to:#06b6d4; }
+.theme-swatch[data-theme="inferno"]  { --ch-from:#b91c1c; --ch-to:#f59e0b; }
+.theme-swatch[data-theme="glacier"]  { --ch-from:#0e7490; --ch-to:#67e8f9; color:#03363d; text-shadow:none;}
+.theme-swatch[data-theme="forest"]   { --ch-from:#047857; --ch-to:#84cc16; }
+.theme-swatch[data-theme="sunset"]   { --ch-from:#f97316; --ch-to:#ec4899; }
+.theme-swatch[data-theme="lightning"]{ --ch-from:#1f2937; --ch-to:#facc15; }
+.theme-swatch[data-theme="royal"]    { --ch-from:#4c1d95; --ch-to:#f59e0b; }
+.theme-swatch[data-theme="ocean"]    { --ch-from:#0c4a6e; --ch-to:#38bdf8; }
+
+/* Markdown content polish (used in challenge descriptions) */
+.md {
+  color: var(--foreground);
+  line-height: 1.65;
+  font-size: 0.95rem;
+}
+.md h1, .md h2, .md h3 { font-weight: 700; letter-spacing: -0.01em; margin: 1em 0 0.4em; }
+.md h1 { font-size: 1.4rem; }
+.md h2 { font-size: 1.2rem; }
+.md h3 { font-size: 1.05rem; }
+.md p { margin: 0.6em 0; }
+.md ul, .md ol { padding-left: 1.25rem; margin: 0.6em 0; }
+.md li { margin: 0.2em 0; }
+.md a { color: var(--ui-primary); text-decoration: underline; text-underline-offset: 2px; }
+.md code {
+  font-family: var(--font-geist-mono), monospace;
+  background: var(--surface-2);
+  padding: 0.1em 0.35em;
+  border-radius: 0.35em;
+  font-size: 0.88em;
+}
+.md pre {
+  background: var(--surface-2);
+  padding: 0.75rem;
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+}
+.md img { border-radius: var(--radius-md); max-width: 100%; height: auto; }
+.md blockquote {
+  border-left: 3px solid color-mix(in oklab, var(--ui-primary) 50%, transparent);
+  padding-left: 0.75rem;
+  color: var(--muted);
+  margin: 0.6em 0;
 }

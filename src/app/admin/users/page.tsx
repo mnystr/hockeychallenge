@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { getT } from "@/lib/i18n/server";
 import { setSuperAdmin } from "./actions";
 
 type TeamMembership = {
@@ -48,8 +49,6 @@ export default async function AdminUsersPage({
   if (q) {
     try {
       const admin = createServiceClient();
-      // Auth admin API filters by email substring when passed via `filter`.
-      // We cap to 25 results; for a small league site that's plenty.
       const { data: authData, error: authErr } = await admin.auth.admin.listUsers({
         page: 1,
         perPage: 25,
@@ -112,76 +111,75 @@ export default async function AdminUsersPage({
     }
   }
 
+  const t = await getT();
+
   return (
-    <main className="mx-auto max-w-4xl px-4 py-10">
+    <main className="mx-auto w-full max-w-4xl px-4 py-8">
       <Link
         href="/admin"
-        className="mb-2 inline-block text-sm text-blue-600 hover:underline"
+        className="mb-3 inline-block text-sm font-medium text-ui-primary hover:underline"
       >
-        ← Super-admin
+        {t("admin.user_lookup.back_super")}
       </Link>
-      <h1 className="mb-6 text-3xl font-bold">User lookup</h1>
+      <h1 className="mb-6 text-3xl font-extrabold tracking-tight">
+        {t("admin.user_lookup.title")}
+      </h1>
 
       <form method="GET" className="mb-6 flex gap-2">
         <input
           type="search"
           name="q"
           defaultValue={q}
-          placeholder="Search by email or user id"
-          className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          placeholder={t("admin.user_lookup.placeholder")}
+          className="input flex-1"
         />
-        <button
-          type="submit"
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
-          Search
+        <button type="submit" className="btn btn-primary">
+          {t("admin.user_lookup.search")}
         </button>
       </form>
 
       {error && (
-        <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
+        <p className="pill pill-danger mb-4 px-3 py-2 text-sm">{error}</p>
       )}
 
       {!q && (
-        <p className="text-sm text-gray-500">
-          Enter an email address or user id above to look up an account. Results
-          are limited to 25 matches at a time.
+        <p className="card card-pad text-sm text-muted">
+          {t("admin.user_lookup.instructions")}
         </p>
       )}
 
       {q && rows.length === 0 && !error && (
-        <p className="text-sm text-gray-500">No users matched that search.</p>
+        <p className="card card-pad text-sm text-muted">
+          {t("admin.user_lookup.no_match")}
+        </p>
       )}
 
       {rows.length > 0 && (
         <ul className="space-y-4">
           {rows.map((r) => (
-            <li
-              key={r.id}
-              className="rounded-md border border-gray-200 p-4"
-            >
+            <li key={r.id} className="card card-pad">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <div className="font-medium">
-                    {r.email ?? "(no email)"}
+                  <div className="font-semibold tracking-tight">
+                    {r.email ?? t("admin.user_lookup.no_email")}
                     {r.is_super_admin && (
-                      <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
-                        super-admin
+                      <span className="pill pill-warning ml-2">
+                        {t("admin.user_lookup.super_admin_badge")}
                       </span>
                     )}
                     {r.deleted_at && (
-                      <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
-                        deleted
+                      <span className="pill pill-danger ml-2">
+                        {t("admin.user_lookup.deleted")}
                       </span>
                     )}
                   </div>
-                  <div className="mt-1 font-mono text-xs text-gray-500">
-                    {r.id}
-                  </div>
-                  <div className="mt-1 text-xs text-gray-500">
-                    Joined {r.created_at ? new Date(r.created_at).toLocaleString() : "—"}
+                  <div className="mono mt-1 text-xs text-muted-2">{r.id}</div>
+                  <div className="mt-1 text-xs text-muted">
+                    {t("admin.user_lookup.joined", {
+                      date: r.created_at
+                        ? new Date(r.created_at).toLocaleString()
+                        : "—",
+                    })}
                   </div>
                 </div>
                 <form
@@ -190,19 +188,18 @@ export default async function AdminUsersPage({
                     await setSuperAdmin(r.id, !r.is_super_admin);
                   }}
                 >
-                  <button
-                    type="submit"
-                    className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                  >
-                    {r.is_super_admin ? "Revoke super-admin" : "Grant super-admin"}
+                  <button type="submit" className="btn btn-secondary btn-sm">
+                    {r.is_super_admin
+                      ? t("admin.user_lookup.revoke_super")
+                      : t("admin.user_lookup.grant_super")}
                   </button>
                 </form>
               </div>
 
               {r.memberships.length > 0 && (
                 <div className="mt-3">
-                  <div className="mb-1 text-xs font-semibold uppercase text-gray-500">
-                    Teams
+                  <div className="section-title mb-1">
+                    {t("admin.user_lookup.teams")}
                   </div>
                   <ul className="space-y-1 text-sm">
                     {r.memberships.map((m, i) => {
@@ -219,19 +216,26 @@ export default async function AdminUsersPage({
                             {m.teams ? (
                               <Link
                                 href={`/t/${m.teams.slug}`}
-                                className="text-blue-600 hover:underline"
+                                className="font-medium text-ui-primary hover:underline"
                               >
                                 {m.teams.name}
                               </Link>
                             ) : (
-                              <span className="text-gray-400">(unknown team)</span>
+                              <span className="text-muted-2">
+                                {t("admin.user_lookup.unknown_team")}
+                              </span>
                             )}
-                            <span className="ml-2 text-xs text-gray-500">
-                              {m.role} · {isDeleted ? "deleted" : m.status}
+                            <span className="ml-2 text-xs text-muted">
+                              {m.role} ·{" "}
+                              {isDeleted
+                                ? t("admin.user_lookup.deleted")
+                                : m.status}
                             </span>
                             {profile && (
-                              <span className="ml-2 text-xs text-gray-500">
-                                as {profile.display_name}
+                              <span className="ml-2 text-xs text-muted">
+                                {t("admin.user_lookup.as", {
+                                  name: profile.display_name,
+                                })}
                               </span>
                             )}
                           </span>

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireTeamAdmin } from "@/lib/auth/session";
+import { getT } from "@/lib/i18n/server";
+import { Plus } from "@/components/icons";
 
 export default async function LeaderboardsAdminListPage({
   params,
@@ -27,64 +29,77 @@ export default async function LeaderboardsAdminListPage({
     .is("deleted_at", null)
     .order("updated_at", { ascending: false });
 
+  const t = await getT();
+
   return (
-    <main className="mx-auto max-w-3xl px-4 py-10">
+    <main className="mx-auto w-full max-w-3xl px-4 py-8">
       <Link
         href={`/t/${slug}/admin`}
-        className="mb-2 inline-block text-sm text-blue-600 hover:underline"
+        className="mb-3 inline-block text-sm font-medium text-ui-primary hover:underline"
       >
-        ← Admin
+        {t("admin.back_admin")}
       </Link>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Leaderboards</h1>
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <h1 className="text-3xl font-extrabold tracking-tight">
+          {t("admin.leaderboards.title")}
+        </h1>
         <Link
           href={`/t/${slug}/admin/leaderboards/new`}
-          className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+          className="btn btn-primary"
         >
-          New leaderboard
+          <Plus className="h-4 w-4" />
+          {t("admin.leaderboards.new_leaderboard")}
         </Link>
       </div>
 
       {boards && boards.length > 0 ? (
-        <ul className="divide-y divide-gray-200 rounded-md border border-gray-200">
+        <ul className="space-y-2">
           {boards.map((b) => (
             <li key={b.id}>
               <Link
                 href={`/t/${slug}/admin/leaderboards/${b.id}`}
-                className="flex items-center justify-between px-4 py-3 hover:bg-gray-50"
+                className="card card-pad card-hover card-link flex items-center justify-between gap-3"
               >
-                <div>
-                  <div className="font-medium">{b.name}</div>
-                  <div className="mt-0.5 text-xs text-gray-500">
+                <div className="min-w-0">
+                  <div className="font-semibold tracking-tight">{b.name}</div>
+                  <div className="mt-0.5 text-xs text-muted">
                     {b.kind}
                     {b.ends_at &&
-                      ` · ends ${new Date(b.ends_at).toLocaleDateString()}`}
-                    {" · updated "}
-                    {new Date(b.updated_at).toLocaleString()}
+                      ` · ${t("admin.leaderboards.ends", {
+                        date: new Date(b.ends_at).toLocaleDateString(),
+                      })}`}
+                    {" · "}
+                    {t("admin.leaderboards.updated", {
+                      date: new Date(b.updated_at).toLocaleString(),
+                    })}
                   </div>
                 </div>
-                <StatusBadge status={b.status} />
+                <StatusBadge status={b.status} t={t} />
               </Link>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="text-sm text-gray-500">No leaderboards yet.</p>
+        <p className="card card-pad text-sm text-muted">
+          {t("admin.leaderboards.empty")}
+        </p>
       )}
     </main>
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, string> = {
-    active: "bg-green-100 text-green-700",
-    archived: "bg-amber-100 text-amber-700",
-  };
-  return (
-    <span
-      className={`rounded-full px-2 py-0.5 text-xs font-medium ${map[status] ?? "bg-gray-100 text-gray-700"}`}
-    >
-      {status}
-    </span>
-  );
+function StatusBadge({
+  status,
+  t,
+}: {
+  status: string;
+  t: (key: string, vars?: Record<string, string | number>) => string;
+}) {
+  const labelKey =
+    status === "archived"
+      ? "admin.leaderboards.status_archived"
+      : "admin.leaderboards.status_active";
+  const cls =
+    status === "archived" ? "pill pill-warning" : "pill pill-success";
+  return <span className={cls}>{t(labelKey)}</span>;
 }

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireTeamAdmin } from "@/lib/auth/session";
+import { getT } from "@/lib/i18n/server";
+import { Plus } from "@/components/icons";
 import { createChallengeDraft } from "./actions";
 
 export default async function ChallengesAdminListPage({
@@ -36,67 +38,87 @@ export default async function ChallengesAdminListPage({
         .order("updated_at", { ascending: false })
     : { data: [] };
 
+  const t = await getT();
+
   return (
-    <main className="mx-auto max-w-3xl px-4 py-10">
+    <main className="mx-auto w-full max-w-3xl px-4 py-8">
       <Link
         href={`/t/${slug}/admin`}
-        className="mb-2 inline-block text-sm text-blue-600 hover:underline"
+        className="mb-3 inline-block text-sm font-medium text-ui-primary hover:underline"
       >
-        ← Admin
+        {t("admin.back_admin")}
       </Link>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Challenges</h1>
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <h1 className="text-3xl font-extrabold tracking-tight">
+          {t("admin.challenges.title")}
+        </h1>
         <form
           action={async () => {
             "use server";
             await createChallengeDraft(slug);
           }}
         >
-          <button className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700">
-            New challenge
+          <button className="btn btn-primary">
+            <Plus className="h-4 w-4" />
+            {t("admin.challenges.new_challenge")}
           </button>
         </form>
       </div>
 
       {challenges && challenges.length > 0 ? (
-        <ul className="divide-y divide-gray-200 rounded-md border border-gray-200">
+        <ul className="space-y-2">
           {challenges.map((c) => (
             <li key={c.id}>
               <Link
                 href={`/t/${slug}/admin/challenges/${c.id}`}
-                className="flex items-center justify-between px-4 py-3 hover:bg-gray-50"
+                className="card card-pad card-hover card-link flex items-center justify-between gap-3"
               >
-                <div>
-                  <div className="font-medium">{c.title || "(untitled)"}</div>
-                  <div className="mt-0.5 text-xs text-gray-500">
-                    Updated {new Date(c.updated_at).toLocaleString()}
+                <div className="min-w-0">
+                  <div className="font-semibold tracking-tight">
+                    {c.title || t("admin.challenges.untitled")}
+                  </div>
+                  <div className="mt-0.5 text-xs text-muted">
+                    {t("admin.challenges.updated", {
+                      date: new Date(c.updated_at).toLocaleString(),
+                    })}
                     {c.ends_at &&
-                      ` · ends ${new Date(c.ends_at).toLocaleDateString()}`}
+                      ` · ${t("admin.challenges.ends", {
+                        date: new Date(c.ends_at).toLocaleDateString(),
+                      })}`}
                   </div>
                 </div>
-                <StatusBadge status={c.status} />
+                <StatusBadge status={c.status} t={t} />
               </Link>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="text-sm text-gray-500">No challenges yet.</p>
+        <p className="card card-pad text-sm text-muted">
+          {t("admin.challenges.empty")}
+        </p>
       )}
     </main>
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, string> = {
-    draft: "bg-gray-100 text-gray-700",
-    published: "bg-green-100 text-green-700",
-    archived: "bg-amber-100 text-amber-700",
-  };
-  return (
-    <span
-      className={`rounded-full px-2 py-0.5 text-xs font-medium ${map[status] ?? "bg-gray-100 text-gray-700"}`}
-    >
-      {status}
-    </span>
-  );
+function StatusBadge({
+  status,
+  t,
+}: {
+  status: string;
+  t: (key: string, vars?: Record<string, string | number>) => string;
+}) {
+  const labelKey =
+    status === "draft"
+      ? "admin.challenges.status_draft"
+      : status === "published"
+        ? "admin.challenges.status_published"
+        : "admin.challenges.status_archived";
+  const cls =
+    status === "published"
+      ? "pill pill-success"
+      : status === "archived"
+        ? "pill pill-warning"
+        : "pill";
+  return <span className={cls}>{t(labelKey)}</span>;
 }

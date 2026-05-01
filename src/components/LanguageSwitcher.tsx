@@ -14,7 +14,13 @@ export default async function LanguageSwitcher() {
   }
 
   return (
-    <div className="fixed right-3 top-3 z-50 flex gap-1 rounded-full border border-gray-200 bg-white/90 p-1 shadow-sm backdrop-blur">
+    <div
+      className="fixed right-3 top-3 z-50 flex gap-1 rounded-full border p-1 shadow-md backdrop-blur"
+      style={{
+        background: "color-mix(in oklab, var(--surface) 85%, transparent)",
+        borderColor: "var(--border)",
+      }}
+    >
       <form action={toSv}>
         <button
           type="submit"
@@ -23,9 +29,14 @@ export default async function LanguageSwitcher() {
           aria-pressed={locale === "sv"}
           className={`flex h-7 w-7 items-center justify-center rounded-full transition ${
             locale === "sv"
-              ? "ring-2 ring-blue-500"
-              : "opacity-60 hover:opacity-100"
+              ? "ring-2"
+              : "opacity-55 hover:opacity-100"
           }`}
+          style={
+            locale === "sv"
+              ? { boxShadow: "0 0 0 2px var(--ui-primary)" }
+              : undefined
+          }
         >
           <SeFlag />
         </button>
@@ -38,9 +49,14 @@ export default async function LanguageSwitcher() {
           aria-pressed={locale === "en"}
           className={`flex h-7 w-7 items-center justify-center rounded-full transition ${
             locale === "en"
-              ? "ring-2 ring-blue-500"
-              : "opacity-60 hover:opacity-100"
+              ? ""
+              : "opacity-55 hover:opacity-100"
           }`}
+          style={
+            locale === "en"
+              ? { boxShadow: "0 0 0 2px var(--ui-primary)" }
+              : undefined
+          }
         >
           <GbFlag />
         </button>

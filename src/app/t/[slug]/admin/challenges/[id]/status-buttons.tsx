@@ -5,14 +5,24 @@ import {
   softDeleteChallenge,
 } from "../actions";
 
+export type ChallengeStatusButtonsStrings = {
+  publish: string;
+  unpublish: string;
+  archive: string;
+  move_to_draft: string;
+  delete: string;
+};
+
 export default function ChallengeStatusButtons({
   slug,
   challengeId,
   status,
+  strings,
 }: {
   slug: string;
   challengeId: string;
   status: string;
+  strings: ChallengeStatusButtonsStrings;
 }) {
   return (
     <div className="flex flex-wrap gap-2">
@@ -23,9 +33,7 @@ export default function ChallengeStatusButtons({
             await publishChallenge(slug, challengeId);
           }}
         >
-          <button className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700">
-            Publish
-          </button>
+          <button className="btn btn-primary btn-sm">{strings.publish}</button>
         </form>
       )}
       {status === "published" && (
@@ -36,8 +44,8 @@ export default function ChallengeStatusButtons({
               await unpublishChallenge(slug, challengeId);
             }}
           >
-            <button className="rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50">
-              Unpublish
+            <button className="btn btn-secondary btn-sm">
+              {strings.unpublish}
             </button>
           </form>
           <form
@@ -46,8 +54,8 @@ export default function ChallengeStatusButtons({
               await archiveChallenge(slug, challengeId);
             }}
           >
-            <button className="rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50">
-              Archive
+            <button className="btn btn-secondary btn-sm">
+              {strings.archive}
             </button>
           </form>
         </>
@@ -59,8 +67,8 @@ export default function ChallengeStatusButtons({
             await unpublishChallenge(slug, challengeId);
           }}
         >
-          <button className="rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50">
-            Move back to draft
+          <button className="btn btn-secondary btn-sm">
+            {strings.move_to_draft}
           </button>
         </form>
       )}
@@ -70,9 +78,7 @@ export default function ChallengeStatusButtons({
           await softDeleteChallenge(slug, challengeId);
         }}
       >
-        <button className="rounded-md border border-red-300 px-3 py-1.5 text-sm text-red-700 hover:bg-red-50">
-          Delete
-        </button>
+        <button className="btn btn-danger btn-sm">{strings.delete}</button>
       </form>
     </div>
   );

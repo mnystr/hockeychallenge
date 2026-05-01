@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireTeamAdmin } from "@/lib/auth/session";
+import { getT } from "@/lib/i18n/server";
+import { Shield } from "@/components/icons";
 
 export default async function TeamAdminDashboard({
   params,
@@ -57,83 +59,109 @@ export default async function TeamAdminDashboard({
   const totalPending =
     (pendingMemberships.count ?? 0) + (pendingChanges.count ?? 0);
 
-  return (
-    <main className="mx-auto max-w-2xl px-4 py-10">
-      <p className="mb-2 text-xs uppercase tracking-wide text-gray-500">
-        {ctx.teamName}
-      </p>
-      <h1 className="mb-6 text-3xl font-bold">Admin</h1>
+  const t = await getT();
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Link
+  return (
+    <main className="mx-auto w-full max-w-3xl px-4 py-8">
+      <p className="section-title mb-2">{ctx.teamName}</p>
+      <header className="mb-6 flex items-center gap-3">
+        <span
+          className="grid h-12 w-12 place-items-center rounded-2xl"
+          style={{
+            background: "color-mix(in oklab, var(--ui-primary) 14%, var(--surface))",
+            color: "color-mix(in oklab, var(--ui-primary) 75%, black)",
+          }}
+        >
+          <Shield className="h-6 w-6" />
+        </span>
+        <h1 className="text-3xl font-extrabold tracking-tight">
+          {t("admin.dashboard.title")}
+        </h1>
+      </header>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <DashCard
           href={`/t/${slug}/admin/approvals`}
-          className="rounded-md border border-gray-200 p-4 hover:bg-gray-50"
-        >
-          <div className="font-semibold">Approvals</div>
-          <div className="mt-1 text-sm text-gray-500">
-            {totalPending} pending
-          </div>
-        </Link>
-        <Link
+          title={t("admin.dashboard.approvals")}
+          body={t("admin.dashboard.pending_count", { count: totalPending })}
+          highlight={totalPending > 0}
+        />
+        <DashCard
           href={`/t/${slug}/admin/invites`}
-          className="rounded-md border border-gray-200 p-4 hover:bg-gray-50"
-        >
-          <div className="font-semibold">Invites</div>
-          <div className="mt-1 text-sm text-gray-500">
-            {activeInvites.count ?? 0} active
-          </div>
-        </Link>
-        <Link
+          title={t("admin.dashboard.invites")}
+          body={t("admin.dashboard.active_count", {
+            count: activeInvites.count ?? 0,
+          })}
+        />
+        <DashCard
           href={`/t/${slug}/admin/challenges`}
-          className="rounded-md border border-gray-200 p-4 hover:bg-gray-50"
-        >
-          <div className="font-semibold">Challenges</div>
-          <div className="mt-1 text-sm text-gray-500">
-            {challengeCount.count ?? 0} total
-          </div>
-        </Link>
-        <Link
+          title={t("admin.dashboard.challenges")}
+          body={t("admin.dashboard.total_count", {
+            count: challengeCount.count ?? 0,
+          })}
+        />
+        <DashCard
           href={`/t/${slug}/admin/leaderboards`}
-          className="rounded-md border border-gray-200 p-4 hover:bg-gray-50"
-        >
-          <div className="font-semibold">Leaderboards</div>
-          <div className="mt-1 text-sm text-gray-500">
-            {leaderboardCount.count ?? 0} total
-          </div>
-        </Link>
-        <Link
+          title={t("admin.dashboard.leaderboards")}
+          body={t("admin.dashboard.total_count", {
+            count: leaderboardCount.count ?? 0,
+          })}
+        />
+        <DashCard
           href={`/t/${slug}/admin/settings`}
-          className="rounded-md border border-gray-200 p-4 hover:bg-gray-50"
-        >
-          <div className="font-semibold">Settings</div>
-          <div className="mt-1 text-sm text-gray-500">Theme and branding.</div>
-        </Link>
-        <Link
+          title={t("admin.dashboard.settings")}
+          body={t("admin.dashboard.settings_body")}
+        />
+        <DashCard
           href={`/t/${slug}/admin/audit`}
-          className="rounded-md border border-gray-200 p-4 hover:bg-gray-50"
-        >
-          <div className="font-semibold">Audit log</div>
-          <div className="mt-1 text-sm text-gray-500">
-            Every moderation action.
-          </div>
-        </Link>
-        <Link
+          title={t("admin.dashboard.audit")}
+          body={t("admin.dashboard.audit_body")}
+        />
+        <DashCard
           href={`/t/${slug}/admin/trash`}
-          className="rounded-md border border-gray-200 p-4 hover:bg-gray-50"
-        >
-          <div className="font-semibold">Trash</div>
-          <div className="mt-1 text-sm text-gray-500">
-            Restore soft-deleted items.
-          </div>
-        </Link>
+          title={t("admin.dashboard.trash")}
+          body={t("admin.dashboard.trash_body")}
+        />
       </div>
 
       <Link
         href={`/t/${slug}`}
-        className="mt-8 inline-block text-sm text-blue-600 hover:underline"
+        className="mt-8 inline-block text-sm font-medium text-ui-primary hover:underline"
       >
-        ← Back to team page
+        {t("admin.dashboard.back_to_team")}
       </Link>
     </main>
+  );
+}
+
+function DashCard({
+  href,
+  title,
+  body,
+  highlight = false,
+}: {
+  href: string;
+  title: string;
+  body: string;
+  highlight?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className="card card-pad card-hover card-link"
+      style={
+        highlight
+          ? {
+              borderColor:
+                "color-mix(in oklab, var(--ui-accent) 50%, transparent)",
+              background:
+                "linear-gradient(135deg, color-mix(in oklab, var(--ui-accent) 12%, var(--surface)) 0%, var(--surface) 65%)",
+            }
+          : undefined
+      }
+    >
+      <div className="font-semibold tracking-tight">{title}</div>
+      <div className="mt-1 text-sm text-muted">{body}</div>
+    </Link>
   );
 }

@@ -10,7 +10,6 @@ export const profileChangeSchema = z.object({
     .refine((v) => v === null || (Number.isInteger(v) && v >= 0 && v <= 999), {
       error: "Jersey number must be 0–999.",
     }),
-  pronouns: z.string().trim().max(30).default(""),
   visibility: z.enum(["full", "first_name_only", "initials"]),
 });
 

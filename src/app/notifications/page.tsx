@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getT } from "@/lib/i18n/server";
+import { Bell, ChevronLeft } from "@/components/icons";
 import { markAllRead, markOneRead } from "./actions";
 import PreferencesForm from "./preferences-form";
 
@@ -43,18 +44,32 @@ export default async function NotificationsPage() {
   const t = await getT();
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-10">
+    <main className="mx-auto w-full max-w-3xl px-4 py-8">
       <Link
         href="/"
-        className="mb-2 inline-block text-sm text-blue-600 hover:underline"
+        className="mb-3 inline-flex items-center gap-1 text-sm font-medium text-ui-primary hover:underline"
       >
+        <ChevronLeft className="h-4 w-4" />
         {t("common.back_home")}
       </Link>
-      <h1 className="mb-6 text-3xl font-bold">{t("notifications.title")}</h1>
+      <header className="mb-6 flex items-center gap-3">
+        <span
+          className="grid h-12 w-12 place-items-center rounded-2xl"
+          style={{
+            background: "color-mix(in oklab, var(--ui-primary) 14%, var(--surface))",
+            color: "color-mix(in oklab, var(--ui-primary) 75%, black)",
+          }}
+        >
+          <Bell className="h-6 w-6" />
+        </span>
+        <h1 className="text-3xl font-extrabold tracking-tight">
+          {t("notifications.title")}
+        </h1>
+      </header>
 
       <section className="mb-10">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">{t("notifications.recent")}</h2>
+          <h2 className="section-title">{t("notifications.recent")}</h2>
           {(notifications ?? []).some((n) => !n.read_at) && (
             <form
               action={async () => {
@@ -62,14 +77,14 @@ export default async function NotificationsPage() {
                 await markAllRead();
               }}
             >
-              <button className="text-sm text-blue-600 hover:underline">
+              <button className="text-sm font-semibold text-ui-primary hover:underline">
                 {t("notifications.mark_all_read")}
               </button>
             </form>
           )}
         </div>
         {notifications && notifications.length > 0 ? (
-          <ul className="divide-y divide-gray-200 rounded-md border border-gray-200">
+          <ul className="space-y-2">
             {notifications.map((n) => {
               const team = n.team_id ? teamsById.get(n.team_id) : null;
               const href = renderLink(n, team?.slug ?? null);
@@ -79,21 +94,41 @@ export default async function NotificationsPage() {
               return (
                 <li
                   key={n.id}
-                  className={`flex items-center justify-between gap-3 px-4 py-3 text-sm ${unread ? "bg-blue-50" : ""}`}
+                  className="card card-pad flex items-center justify-between gap-3 text-sm"
+                  style={
+                    unread
+                      ? {
+                          borderColor:
+                            "color-mix(in oklab, var(--ui-primary) 45%, transparent)",
+                          background:
+                            "linear-gradient(90deg, color-mix(in oklab, var(--ui-primary) 10%, var(--surface)) 0%, var(--surface) 60%)",
+                        }
+                      : undefined
+                  }
                 >
-                  <div className="flex-1">
-                    {href ? (
-                      <Link href={href} className="font-medium hover:underline">
-                        {title}
-                      </Link>
-                    ) : (
-                      <span className="font-medium">{title}</span>
-                    )}
-                    <div className="mt-0.5 text-xs text-gray-500">
-                      {kindLabel}
-                      {team ? ` · ${team.name}` : ""}
-                      {" · "}
-                      {new Date(n.created_at).toLocaleString()}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      {unread && (
+                        <span
+                          className="h-2 w-2 shrink-0 rounded-full"
+                          style={{ background: "var(--ui-primary)" }}
+                          aria-hidden
+                        />
+                      )}
+                      {href ? (
+                        <Link href={href} className="truncate font-semibold hover:underline">
+                          {title}
+                        </Link>
+                      ) : (
+                        <span className="truncate font-semibold">{title}</span>
+                      )}
+                    </div>
+                    <div className="mt-1 text-xs text-muted">
+                      <span className="pill">{kindLabel}</span>
+                      {team && <span className="ml-2">{team.name}</span>}
+                      <span className="ml-2 text-muted-2">
+                        {new Date(n.created_at).toLocaleString()}
+                      </span>
                     </div>
                   </div>
                   {unread && (
@@ -103,7 +138,7 @@ export default async function NotificationsPage() {
                         await markOneRead(n.id);
                       }}
                     >
-                      <button className="text-xs text-blue-600 hover:underline">
+                      <button className="btn btn-ghost btn-sm">
                         {t("notifications.mark_read")}
                       </button>
                     </form>
@@ -113,12 +148,14 @@ export default async function NotificationsPage() {
             })}
           </ul>
         ) : (
-          <p className="text-sm text-gray-500">{t("notifications.empty")}</p>
+          <p className="card card-pad text-sm text-muted">
+            {t("notifications.empty")}
+          </p>
         )}
       </section>
 
       <section>
-        <h2 className="mb-3 text-lg font-semibold">
+        <h2 className="section-title mb-3">
           {t("notifications.preferences")}
         </h2>
         <PreferencesForm

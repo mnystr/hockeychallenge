@@ -13,22 +13,59 @@ type Task = {
   position: number;
 };
 
+export type TaskListStrings = {
+  /** "Target {target}" — interpolated client-side. */
+  target_template: string;
+  /** "{points} pts" — interpolated client-side. */
+  pts_template: string;
+  edit: string;
+  remove: string;
+  saving: string;
+  save: string;
+  cancel: string;
+  add_a_task: string;
+  adding: string;
+  add_task: string;
+  task_title: string;
+  description_optional: string;
+  target_count: string;
+  points_optional: string;
+};
+
+function interpolate(template: string, vars: Record<string, string | number>) {
+  return template.replace(/\{(\w+)\}/g, (_m, k) =>
+    String(vars[k] ?? `{${k}}`),
+  );
+}
+
 export default function TaskList({
   slug,
   challengeId,
   tasks,
+  strings,
 }: {
   slug: string;
   challengeId: string;
   tasks: Task[];
+  strings: TaskListStrings;
 }) {
   return (
     <div className="space-y-3">
       {tasks.map((t) => (
-        <TaskRow key={t.id} slug={slug} challengeId={challengeId} task={t} />
+        <TaskRow
+          key={t.id}
+          slug={slug}
+          challengeId={challengeId}
+          task={t}
+          strings={strings}
+        />
       ))}
 
-      <NewTaskForm slug={slug} challengeId={challengeId} />
+      <NewTaskForm
+        slug={slug}
+        challengeId={challengeId}
+        strings={strings}
+      />
     </div>
   );
 }
@@ -37,10 +74,12 @@ function TaskRow({
   slug,
   challengeId,
   task,
+  strings,
 }: {
   slug: string;
   challengeId: string;
   task: Task;
+  strings: TaskListStrings;
 }) {
   const [editing, setEditing] = useState(false);
   const bound = updateTask.bind(null, slug, challengeId, task.id);
@@ -51,29 +90,29 @@ function TaskRow({
 
   if (!editing) {
     return (
-      <div className="flex items-center justify-between rounded-md border border-gray-200 p-3">
-        <div>
-          <div className="font-medium">{task.title}</div>
-          <div className="mt-0.5 text-xs text-gray-500">
-            Target {task.target_count}
-            {task.points !== null ? ` · ${task.points} pts` : ""}
+      <div className="card card-pad flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="font-semibold tracking-tight">{task.title}</div>
+          <div className="mt-0.5 text-xs text-muted">
+            {interpolate(strings.target_template, { target: task.target_count })}
+            {task.points !== null
+              ? ` · ${interpolate(strings.pts_template, { points: task.points })}`
+              : ""}
           </div>
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => setEditing(true)}
-            className="rounded-md border border-gray-300 px-3 py-1 text-sm hover:bg-gray-50"
+            className="btn btn-secondary btn-sm"
           >
-            Edit
+            {strings.edit}
           </button>
           <form
             action={async () => {
               await deleteTask(slug, challengeId, task.id);
             }}
           >
-            <button className="rounded-md border border-red-300 px-3 py-1 text-sm text-red-700 hover:bg-red-50">
-              Remove
-            </button>
+            <button className="btn btn-danger btn-sm">{strings.remove}</button>
           </form>
         </div>
       </div>
@@ -86,24 +125,30 @@ function TaskRow({
         await action(fd);
         setEditing(false);
       }}
-      className="space-y-3 rounded-md border border-blue-200 bg-blue-50/30 p-3"
+      className="card card-pad space-y-3"
+      style={{
+        borderColor:
+          "color-mix(in oklab, var(--ui-primary) 35%, transparent)",
+        background:
+          "color-mix(in oklab, var(--ui-primary) 6%, var(--surface))",
+      }}
       noValidate
     >
-      <TaskFields state={state} defaults={task} />
+      <TaskFields state={state} defaults={task} strings={strings} />
       <div className="flex gap-2">
         <button
           type="submit"
           disabled={pending}
-          className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+          className="btn btn-primary btn-sm"
         >
-          {pending ? "Saving..." : "Save"}
+          {pending ? strings.saving : strings.save}
         </button>
         <button
           type="button"
           onClick={() => setEditing(false)}
-          className="rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50"
+          className="btn btn-secondary btn-sm"
         >
-          Cancel
+          {strings.cancel}
         </button>
       </div>
     </form>
@@ -113,9 +158,11 @@ function TaskRow({
 function NewTaskForm({
   slug,
   challengeId,
+  strings,
 }: {
   slug: string;
   challengeId: string;
+  strings: TaskListStrings;
 }) {
   const bound = createTask.bind(null, slug, challengeId);
   const [state, action, pending] = useActionState<TaskFormState, FormData>(
@@ -124,15 +171,22 @@ function NewTaskForm({
   );
 
   return (
-    <form action={action} className="space-y-3 rounded-md border border-dashed border-gray-300 p-3" noValidate>
-      <p className="text-sm font-medium text-gray-700">Add a task</p>
-      <TaskFields state={state} />
+    <form
+      action={action}
+      className="card card-pad space-y-3"
+      style={{
+        borderStyle: "dashed",
+      }}
+      noValidate
+    >
+      <p className="section-title">{strings.add_a_task}</p>
+      <TaskFields state={state} strings={strings} />
       <button
         type="submit"
         disabled={pending}
-        className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+        className="btn btn-primary btn-sm"
       >
-        {pending ? "Adding..." : "Add task"}
+        {pending ? strings.adding : strings.add_task}
       </button>
     </form>
   );
@@ -141,36 +195,38 @@ function NewTaskForm({
 function TaskFields({
   state,
   defaults,
+  strings,
 }: {
   state: TaskFormState;
   defaults?: Task;
+  strings: TaskListStrings;
 }) {
   const descId = useId();
   return (
     <>
       <Field
         name="title"
-        label="Task title"
+        label={strings.task_title}
         defaultValue={defaults?.title ?? ""}
         errors={state?.errors?.title}
         required
       />
       <div>
-        <label htmlFor={descId} className="mb-1 block text-xs font-medium text-gray-700">
-          Description (Markdown, optional)
+        <label htmlFor={descId} className="label">
+          {strings.description_optional}
         </label>
         <textarea
           id={descId}
           name="description_md"
           rows={3}
           defaultValue={defaults?.description_md ?? ""}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 font-mono text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="textarea input-mono"
         />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <Field
           name="target_count"
-          label="Target count"
+          label={strings.target_count}
           type="number"
           min={1}
           defaultValue={(defaults?.target_count ?? 1).toString()}
@@ -179,16 +235,26 @@ function TaskFields({
         />
         <Field
           name="points"
-          label="Points (optional)"
+          label={strings.points_optional}
           type="number"
           min={0}
           defaultValue={defaults?.points?.toString() ?? ""}
           errors={state?.errors?.points}
         />
       </div>
-      {state?.message && state.message !== "Task added." && state.message !== "Saved." && (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{state.message}</p>
-      )}
+      {state?.message &&
+        state.message !== "Task added." &&
+        state.message !== "Saved." && (
+          <p
+            className="rounded-md px-3 py-2 text-sm"
+            style={{
+              background: "var(--danger-bg)",
+              color: "var(--danger-fg)",
+            }}
+          >
+            {state.message}
+          </p>
+        )}
     </>
   );
 }
@@ -213,7 +279,7 @@ function Field({
   const id = useId();
   return (
     <div>
-      <label htmlFor={id} className="mb-1 block text-xs font-medium text-gray-700">
+      <label htmlFor={id} className="label">
         {label}
       </label>
       <input
@@ -223,9 +289,9 @@ function Field({
         defaultValue={defaultValue}
         required={required}
         min={min}
-        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        className="input"
       />
-      {errors && <p className="mt-1 text-xs text-red-600">{errors[0]}</p>}
+      {errors && <p className="field-error">{errors[0]}</p>}
     </div>
   );
 }

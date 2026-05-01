@@ -7,6 +7,8 @@ import {
 } from "@/lib/profiles/display-name";
 import { getT } from "@/lib/i18n/server";
 import StandaloneEntryForm from "./entry-form";
+import { ChevronLeft, Trophy, Medal, Star } from "@/components/icons";
+import TeamShell from "@/components/TeamShell";
 
 type Row = {
   user_id: string;
@@ -46,7 +48,6 @@ export default async function LeaderboardDetailPage({
     .maybeSingle();
   if (!board) notFound();
 
-  // Team-admin / super-admin check for visibility of 0-value entries.
   const { data: appUser } = await supabase
     .from("app_users")
     .select("is_super_admin")
@@ -63,7 +64,6 @@ export default async function LeaderboardDetailPage({
     appUser?.is_super_admin === true ||
     (membership?.role === "team_admin" && membership?.status === "active");
 
-  // Standings: view for active, snapshots for archived.
   let rows: Row[] = [];
   let ownRow: Row | null = null;
 
@@ -91,14 +91,11 @@ export default async function LeaderboardDetailPage({
       value: Number(r.value),
     })) as Row[];
     ownRow = all.find((r) => r.user_id === user.id) ?? null;
-    // Visibility: hide 0-value entries from non-admins (except own row).
     rows = isAdmin
       ? all
       : all.filter((r) => r.value > 0 || r.user_id === user.id);
   }
 
-  // Fetch current visibility per row's user so we can render names
-  // correctly for non-admin viewers. Admins and own rows bypass.
   const rowUserIds = rows.map((r) => r.user_id);
   const visibilityByUser = new Map<string, Visibility>();
   if (rowUserIds.length > 0) {
@@ -116,31 +113,90 @@ export default async function LeaderboardDetailPage({
 
   const t = await getT();
 
+  function nameFor(r: Row) {
+    const isYou = r.user_id === user!.id;
+    return isAdmin || isYou
+      ? r.display_name
+      : renderDisplayName(
+          r.display_name,
+          visibilityByUser.get(r.user_id) ?? "full",
+        );
+  }
+
+  // Build podium positions {1, 2, 3}, taking the first row at each rank
+  // (ties are resolved by the view's display_order). Anyone tied at the
+  // same rank that doesn't fit on the podium falls through to restRows
+  // so they're still visible.
+  const podiumByRank = new Map<number, Row>();
+  for (const r of rows) {
+    if (r.rank <= 3 && !podiumByRank.has(r.rank)) {
+      podiumByRank.set(r.rank, r);
+    }
+  }
+  const podiumUserIds = new Set(
+    Array.from(podiumByRank.values()).map((r) => r.user_id),
+  );
+  const restRows = rows.filter((r) => !podiumUserIds.has(r.user_id));
+
   return (
-    <main className="mx-auto max-w-2xl px-4 py-10">
+    <>
+    <TeamShell slug={slug} active="leaderboards" />
+    <main className="mx-auto w-full max-w-3xl px-4 py-6">
       <Link
         href={`/t/${slug}/leaderboards`}
-        className="mb-2 inline-block text-sm text-blue-600 hover:underline"
+        className="mb-3 inline-flex items-center gap-1 text-sm font-medium text-ui-primary hover:underline"
       >
-        ← {t("nav.leaderboards")}
+        <ChevronLeft className="h-4 w-4" />
+        {t("nav.leaderboards")}
       </Link>
-      <h1 className="text-3xl font-bold">{board.name}</h1>
-      <p className="mt-1 text-sm text-gray-500">
-        {board.kind === "points"
-          ? t("leaderboards.kind_points")
-          : t("leaderboards.kind_standalone")}
-        {board.unit ? ` · ${board.unit}` : ""}
-        {board.status === "archived"
-          ? ` · ${t("leaderboards.archived", { date: board.archived_at ? new Date(board.archived_at).toLocaleDateString() : "" })}`
-          : ""}
-      </p>
-      {board.description && (
-        <p className="mt-3 text-sm text-gray-700">{board.description}</p>
-      )}
+
+      <section className="hero-panel mb-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <span
+              className="pill"
+              style={{
+                background: "rgba(255,255,255,0.18)",
+                color: "#fff",
+                borderColor: "rgba(255,255,255,0.35)",
+              }}
+            >
+              {board.kind === "points"
+                ? t("leaderboards.kind_points")
+                : t("leaderboards.kind_standalone")}
+              {board.unit ? ` · ${board.unit}` : ""}
+            </span>
+            <h1 className="mt-3 text-3xl font-extrabold tracking-tight sm:text-4xl">
+              {board.name}
+            </h1>
+            {board.status === "archived" && (
+              <p className="mt-2 text-sm text-white/80">
+                {t("leaderboards.archived", {
+                  date: board.archived_at
+                    ? new Date(board.archived_at).toLocaleDateString()
+                    : "",
+                })}
+              </p>
+            )}
+            {board.description && (
+              <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/85">
+                {board.description}
+              </p>
+            )}
+          </div>
+          <Trophy
+            className="hidden h-20 w-20 shrink-0 sm:block"
+            style={{
+              color: "#ffd66b",
+              filter: "drop-shadow(0 6px 18px rgba(0,0,0,0.25))",
+            }}
+          />
+        </div>
+      </section>
 
       {board.kind === "standalone" && board.status === "active" && (
-        <section className="mt-6 rounded-md border border-gray-200 p-4">
-          <h2 className="mb-2 text-sm font-semibold">
+        <section className="card card-pad mb-6">
+          <h2 className="section-title mb-3">
             {t("leaderboards.entry_title")}
           </h2>
           <StandaloneEntryForm
@@ -154,58 +210,163 @@ export default async function LeaderboardDetailPage({
               update: t("leaderboards.entry_update"),
               pending: t("leaderboards.entry_pending"),
               saved: t("leaderboards.entry_saved"),
+              add_one: t("leaderboards.add_one"),
+              add_x_label: t("leaderboards.add_x_label"),
+              add: t("leaderboards.add"),
+              current_value: t("leaderboards.current_value"),
             }}
           />
         </section>
       )}
 
-      <section className="mt-8">
-        <h2 className="mb-3 text-lg font-semibold">
+      <section>
+        <h2 className="section-title mb-4 flex items-center gap-2">
+          <Star className="h-3.5 w-3.5 text-ui-accent" />
           {t("leaderboards.standings")}
         </h2>
-        {rows.length > 0 ? (
-          <ol className="divide-y divide-gray-200 rounded-md border border-gray-200">
-            {rows.map((r) => {
-              const isYou = r.user_id === user.id;
-              const shownName =
-                isAdmin || isYou
-                  ? r.display_name
-                  : renderDisplayName(
-                      r.display_name,
-                      visibilityByUser.get(r.user_id) ?? "full",
-                    );
-              return (
-                <li
-                  key={r.user_id}
-                  className={`flex items-center justify-between px-4 py-2 ${
-                    isYou ? "bg-blue-50" : ""
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="w-8 text-right font-mono text-sm text-gray-500">
-                      {r.rank}
-                    </span>
-                    <span className="font-medium">
-                      {shownName}
-                      {isYou ? ` ${t("leaderboards.you")}` : ""}
-                    </span>
-                  </div>
-                  <span className="font-mono text-sm">
-                    {r.value}
-                    {board.unit ? ` ${board.unit}` : ""}
-                  </span>
-                </li>
-              );
-            })}
-          </ol>
-        ) : (
-          <p className="text-sm text-gray-500">
+
+        {rows.length === 0 ? (
+          <p className="card card-pad text-sm text-muted">
             {board.kind === "points"
               ? t("leaderboards.empty_points")
               : t("leaderboards.empty_standalone")}
           </p>
+        ) : (
+          <>
+            {podiumByRank.size > 0 && (
+              <Podium
+                rank1={podiumByRank.get(1) ?? null}
+                rank2={podiumByRank.get(2) ?? null}
+                rank3={podiumByRank.get(3) ?? null}
+                youId={user.id}
+                unit={board.unit}
+                nameFor={nameFor}
+                youLabel={t("leaderboards.you")}
+              />
+            )}
+
+            {restRows.length > 0 && (
+              <ol className="standings-list mt-6">
+                {restRows.map((r) => {
+                  const isYou = r.user_id === user.id;
+                  return (
+                    <li
+                      key={r.user_id}
+                      className={`standings-row ${isYou ? "is-you" : ""}`}
+                    >
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className="standings-rank">{r.rank}</span>
+                        <span className="standings-name truncate">
+                          {nameFor(r)}
+                          {isYou && (
+                            <span className="ml-1 text-xs text-muted">
+                              {t("leaderboards.you")}
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                      <span className="standings-value">
+                        {r.value}
+                        {board.unit ? ` ${board.unit}` : ""}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ol>
+            )}
+          </>
         )}
       </section>
     </main>
+    </>
+  );
+}
+
+function Podium({
+  rank1,
+  rank2,
+  rank3,
+  youId,
+  unit,
+  nameFor,
+  youLabel,
+}: {
+  rank1: Row | null;
+  rank2: Row | null;
+  rank3: Row | null;
+  youId: string;
+  unit: string | null;
+  nameFor: (r: Row) => string;
+  youLabel: string;
+}) {
+  return (
+    <ol className="podium">
+      {rank2 && (
+        <li
+          className={`podium-card podium-2 ${rank2.user_id === youId ? "is-you" : ""}`}
+        >
+          <div className="podium-medal">
+            <Medal className="h-6 w-6" />
+          </div>
+          <div className="text-xs font-bold tracking-widest text-muted-2">2ND</div>
+          <div className="podium-name mt-1">
+            {nameFor(rank2)}
+            {rank2.user_id === youId && (
+              <span className="ml-1 text-xs text-muted">{youLabel}</span>
+            )}
+          </div>
+          <div className="podium-value">
+            {rank2.value}
+            {unit ? ` ${unit}` : ""}
+          </div>
+        </li>
+      )}
+      {rank1 && (
+        <li
+          className={`podium-card podium-1 ${rank1.user_id === youId ? "is-you" : ""}`}
+        >
+          <Trophy className="podium-trophy" />
+          <div className="podium-medal mt-1">
+            <Star className="h-6 w-6" />
+          </div>
+          <div
+            className="text-xs font-bold tracking-widest"
+            style={{ color: "var(--gold-2)" }}
+          >
+            CHAMPION
+          </div>
+          <div className="podium-name mt-1">
+            {nameFor(rank1)}
+            {rank1.user_id === youId && (
+              <span className="ml-1 text-xs text-muted">{youLabel}</span>
+            )}
+          </div>
+          <div className="podium-value">
+            {rank1.value}
+            {unit ? ` ${unit}` : ""}
+          </div>
+        </li>
+      )}
+      {rank3 && (
+        <li
+          className={`podium-card podium-3 ${rank3.user_id === youId ? "is-you" : ""}`}
+        >
+          <div className="podium-medal">
+            <Medal className="h-6 w-6" />
+          </div>
+          <div className="text-xs font-bold tracking-widest text-muted-2">3RD</div>
+          <div className="podium-name mt-1">
+            {nameFor(rank3)}
+            {rank3.user_id === youId && (
+              <span className="ml-1 text-xs text-muted">{youLabel}</span>
+            )}
+          </div>
+          <div className="podium-value">
+            {rank3.value}
+            {unit ? ` ${unit}` : ""}
+          </div>
+        </li>
+      )}
+    </ol>
   );
 }

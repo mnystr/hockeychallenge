@@ -42,6 +42,7 @@ export async function updateChallenge(
     starts_at: s("starts_at"),
     ends_at: s("ends_at"),
     recurrence: s("recurrence"),
+    card_theme: s("card_theme"),
   });
 
   if (!parsed.success) {
@@ -68,6 +69,7 @@ export async function updateChallenge(
       starts_at: parsed.data.starts_at,
       ends_at: parsed.data.ends_at,
       recurrence: parsed.data.recurrence,
+      card_theme: parsed.data.card_theme,
     })
     .eq("id", challengeId);
 

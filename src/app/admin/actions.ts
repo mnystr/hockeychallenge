@@ -43,3 +43,22 @@ export async function promoteMemberToAdmin(membershipId: string) {
   if (error) throw new Error(error.message);
   revalidatePath("/admin");
 }
+
+export async function approveTeamChange(requestId: string) {
+  const { supabase } = await requireSuperAdmin();
+  const { error } = await supabase.rpc("approve_team_change", {
+    p_request_id: requestId,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin");
+}
+
+export async function rejectTeamChange(requestId: string, note: string | null) {
+  const { supabase } = await requireSuperAdmin();
+  const { error } = await supabase.rpc("reject_team_change", {
+    p_request_id: requestId,
+    p_note: note,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin");
+}

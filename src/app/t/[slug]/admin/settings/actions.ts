@@ -11,6 +11,32 @@ import {
 } from "@/lib/media/upload";
 import { createServiceClient } from "@/lib/supabase/service";
 
+export type TeamRenameFormState =
+  | { error?: string; message?: string }
+  | undefined;
+
+export async function submitTeamRename(
+  slug: string,
+  _prev: TeamRenameFormState,
+  formData: FormData,
+): Promise<TeamRenameFormState> {
+  const ctx = await requireTeamAdmin(slug);
+  const proposed = (formData.get("proposed_name") ?? "").toString().trim();
+  if (proposed.length < 2 || proposed.length > 80) {
+    return { error: "Name must be 2–80 characters." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("submit_team_change", {
+    p_team_id: ctx.teamId,
+    p_proposed_name: proposed,
+  });
+  if (error) return { error: error.message };
+
+  revalidatePath(`/t/${slug}/admin/settings`);
+  return { message: "Submitted." };
+}
+
 export async function setTeamTheme(slug: string, themeId: string) {
   await requireTeamAdmin(slug);
   const supabase = await createClient();
@@ -95,7 +121,6 @@ export async function uploadTeamMedia(
 export async function clearTeamMedia(
   slug: string,
   kind: "logo" | "header",
-  _formData?: FormData,
 ) {
   const ctx = await requireTeamAdmin(slug);
   const { column } = KIND_TO_COLUMN[kind];

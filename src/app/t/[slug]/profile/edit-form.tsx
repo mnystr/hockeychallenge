@@ -8,7 +8,6 @@ type Profile = {
   id: string;
   display_name: string;
   jersey_number: number | null;
-  pronouns: string | null;
   visibility: "full" | "first_name_only" | "initials";
   picture_url: string | null;
 };
@@ -17,7 +16,6 @@ type Strings = {
   display_name_label: string;
   display_name_hint: string;
   jersey_label: string;
-  pronouns_label: string;
   visibility_label: string;
   visibility_full: string;
   visibility_first: string;
@@ -48,7 +46,11 @@ export default function ProfileEditForm({
   >(bound, undefined);
 
   return (
-    <form action={action} className="space-y-4" noValidate encType="multipart/form-data">
+    <form
+      action={action}
+      className="card card-pad-lg space-y-5"
+      noValidate
+    >
       <Field
         name="display_name"
         label={strings.display_name_label}
@@ -57,56 +59,48 @@ export default function ProfileEditForm({
         hint={strings.display_name_hint}
       />
 
-      <div className="grid grid-cols-2 gap-3">
-        <Field
-          name="jersey_number"
-          label={strings.jersey_label}
-          type="number"
-          min={0}
-          max={999}
-          defaultValue={profile.jersey_number?.toString() ?? ""}
-          errors={state?.errors?.jersey_number}
-        />
-        <Field
-          name="pronouns"
-          label={strings.pronouns_label}
-          defaultValue={profile.pronouns ?? ""}
-          errors={state?.errors?.pronouns}
-        />
-      </div>
+      <Field
+        name="jersey_number"
+        label={strings.jersey_label}
+        type="number"
+        min={0}
+        max={999}
+        defaultValue={profile.jersey_number?.toString() ?? ""}
+        errors={state?.errors?.jersey_number}
+      />
 
       <div>
-        <label htmlFor="visibility" className="mb-1 block text-sm font-medium">
+        <label htmlFor="visibility" className="label">
           {strings.visibility_label}
         </label>
         <select
           id="visibility"
           name="visibility"
           defaultValue={profile.visibility}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          className="select"
         >
           <option value="full">{strings.visibility_full}</option>
           <option value="first_name_only">{strings.visibility_first}</option>
           <option value="initials">{strings.visibility_initials}</option>
         </select>
-        <p className="mt-1 text-xs text-gray-500">{strings.visibility_hint}</p>
+        <p className="hint">{strings.visibility_hint}</p>
       </div>
 
       <div>
-        <label htmlFor="picture" className="mb-1 block text-sm font-medium">
+        <label htmlFor="picture" className="label">
           {strings.picture_label}
         </label>
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-4">
           <div className="shrink-0">
             {profile.picture_url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={profile.picture_url}
                 alt={strings.picture_current}
-                className="h-16 w-16 rounded-full object-cover"
+                className="avatar avatar-lg object-cover"
               />
             ) : (
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 text-xs text-gray-400">
+              <div className="avatar avatar-lg text-[0.62rem] leading-tight">
                 {strings.picture_none}
               </div>
             )}
@@ -117,20 +111,21 @@ export default function ProfileEditForm({
               name="picture"
               type="file"
               accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
-              className="block w-full text-sm file:mr-3 file:rounded-md file:border file:border-gray-300 file:bg-white file:px-3 file:py-1.5 file:text-sm file:font-medium hover:file:bg-gray-50"
+              className="block w-full text-sm file:mr-3 file:rounded-lg file:border file:border-[color:var(--border)] file:bg-[color:var(--surface)] file:px-3 file:py-1.5 file:text-sm file:font-semibold hover:file:bg-[color:var(--surface-2)]"
             />
-            <p className="mt-1 text-xs text-gray-500">{strings.picture_hint}</p>
+            <p className="hint">{strings.picture_hint}</p>
           </div>
         </div>
       </div>
 
       {state?.message && (
         <p
-          className={`rounded-md px-3 py-2 text-sm ${
+          className={`rounded-md px-3 py-2 text-sm font-medium ${
             state.message === strings.submitted_ok ||
-            state.message.startsWith("Submitted")
-              ? "bg-green-50 text-green-700"
-              : "bg-red-50 text-red-700"
+            state.message.startsWith("Submitted") ||
+            state.message.startsWith("Skickat")
+              ? "pill pill-success"
+              : "pill pill-danger"
           }`}
         >
           {state.message}
@@ -140,7 +135,7 @@ export default function ProfileEditForm({
       <button
         type="submit"
         disabled={pending}
-        className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+        className="btn btn-primary btn-lg"
       >
         {pending ? strings.submit_pending : strings.submit}
       </button>
@@ -169,7 +164,7 @@ function Field({
 }) {
   return (
     <div>
-      <label htmlFor={name} className="mb-1 block text-sm font-medium">
+      <label htmlFor={name} className="label">
         {label}
       </label>
       <input
@@ -179,10 +174,10 @@ function Field({
         defaultValue={defaultValue}
         min={min}
         max={max}
-        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        className="input"
       />
-      {hint && <p className="mt-1 text-xs text-gray-500">{hint}</p>}
-      {errors && <p className="mt-1 text-sm text-red-600">{errors[0]}</p>}
+      {hint && <p className="hint">{hint}</p>}
+      {errors && <p className="field-error">{errors[0]}</p>}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CHALLENGE_CARD_THEMES } from "@/lib/challenges/card-themes";
 
 const optionalTimestamp = z
   .string()
@@ -19,6 +20,17 @@ export const leaderboardSchema = z
     unit: z.string().trim().max(30).optional().transform((v) => v || null),
     starts_at: optionalTimestamp,
     ends_at: optionalTimestamp,
+    card_theme: z
+      .string()
+      .trim()
+      .optional()
+      .transform((v) => (v && v !== "default" ? v : null))
+      .refine(
+        (v) =>
+          v === null ||
+          (CHALLENGE_CARD_THEMES as readonly string[]).includes(v),
+        { error: "Unknown card theme." },
+      ),
   })
   .refine(
     (v) =>

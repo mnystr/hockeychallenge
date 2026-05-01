@@ -1,8 +1,10 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getT } from "@/lib/i18n/server";
 import { publicMediaUrl } from "@/lib/media/url";
+import { renderDisplayName } from "@/lib/profiles/display-name";
+import { User } from "@/components/icons";
+import TeamShell from "@/components/TeamShell";
 import ProfileEditForm from "./edit-form";
 
 export default async function ProfilePage({
@@ -28,7 +30,7 @@ export default async function ProfilePage({
   const { data: profile } = await supabase
     .from("profiles")
     .select(
-      "id, display_name, jersey_number, pronouns, visibility, approved, profile_picture_path",
+      "id, display_name, jersey_number, visibility, approved, profile_picture_path",
     )
     .eq("user_id", user.id)
     .eq("team_id", team.id)
@@ -40,7 +42,7 @@ export default async function ProfilePage({
   const { data: pending } = await supabase
     .from("profile_change_requests")
     .select(
-      "id, proposed_display_name, proposed_jersey_number, proposed_pronouns, proposed_visibility, proposed_picture_path, created_at",
+      "id, proposed_display_name, proposed_jersey_number, proposed_visibility, proposed_picture_path, created_at",
     )
     .eq("profile_id", profile.id)
     .eq("status", "pending")
@@ -50,21 +52,39 @@ export default async function ProfilePage({
   const t = await getT();
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-10">
-      <Link
-        href={`/t/${slug}`}
-        className="mb-2 inline-block text-sm text-blue-600 hover:underline"
-      >
-        ← {team.name}
-      </Link>
-      <h1 className="mb-6 text-3xl font-bold">{t("profile.title")}</h1>
+    <>
+      <TeamShell slug={slug} active="profile" />
+      <main className="mx-auto w-full max-w-2xl px-4 py-6">
+        <header className="mb-6 flex items-center gap-3">
+          <span
+            className="grid h-10 w-10 place-items-center rounded-xl"
+            style={{
+              background:
+                "color-mix(in oklab, var(--ui-primary) 14%, var(--surface))",
+              color: "color-mix(in oklab, var(--ui-primary) 75%, black)",
+            }}
+          >
+            <User className="h-5 w-5" />
+          </span>
+          <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
+            {t("profile.title")}
+          </h1>
+        </header>
 
       {pending && (
-        <section className="mb-6 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        <section
+          className="mb-6 card card-pad text-sm"
+          style={{
+            background: "var(--warning-bg)",
+            borderColor:
+              "color-mix(in oklab, var(--warning) 35%, transparent)",
+            color: "var(--warning-fg)",
+          }}
+        >
           <p className="font-semibold">
             {t("profile.pending_banner_title")}
           </p>
-          <p className="mt-1 text-amber-800">
+          <p className="mt-1">
             {t("profile.pending_submitted", {
               time: new Date(pending.created_at).toLocaleString(),
             })}
@@ -81,13 +101,6 @@ export default async function ProfilePage({
               <li>
                 {t("profile.pending_jersey", {
                   number: pending.proposed_jersey_number,
-                })}
-              </li>
-            )}
-            {pending.proposed_pronouns && (
-              <li>
-                {t("profile.pending_pronouns", {
-                  pronouns: pending.proposed_pronouns,
                 })}
               </li>
             )}
@@ -111,7 +124,6 @@ export default async function ProfilePage({
           id: profile.id,
           display_name: profile.display_name,
           jersey_number: profile.jersey_number,
-          pronouns: profile.pronouns,
           visibility: profile.visibility,
           picture_url: publicMediaUrl(profile.profile_picture_path),
         }}
@@ -119,11 +131,16 @@ export default async function ProfilePage({
           display_name_label: t("profile.display_name_label"),
           display_name_hint: t("profile.display_name_hint"),
           jersey_label: t("profile.jersey_label"),
-          pronouns_label: t("profile.pronouns_label"),
           visibility_label: t("profile.visibility_label"),
-          visibility_full: t("profile.visibility_full"),
-          visibility_first: t("profile.visibility_first"),
-          visibility_initials: t("profile.visibility_initials"),
+          visibility_full: t("profile.visibility_full", {
+            name: renderDisplayName(profile.display_name, "full"),
+          }),
+          visibility_first: t("profile.visibility_first", {
+            name: renderDisplayName(profile.display_name, "first_name_only"),
+          }),
+          visibility_initials: t("profile.visibility_initials", {
+            name: renderDisplayName(profile.display_name, "initials"),
+          }),
           visibility_hint: t("profile.visibility_hint"),
           picture_label: t("profile.picture_label"),
           picture_hint: t("profile.picture_hint"),
@@ -134,6 +151,7 @@ export default async function ProfilePage({
           submitted_ok: t("profile.submitted_ok"),
         }}
       />
-    </main>
+      </main>
+    </>
   );
 }

@@ -38,18 +38,17 @@ export default function PreferencesForm({
   >(updatePreferences, undefined);
 
   if (rows.length === 0) {
-    return <p className="text-sm text-gray-500">{strings.empty}</p>;
+    return <p className="card card-pad text-sm text-muted">{strings.empty}</p>;
   }
 
   return (
-    <form action={action} className="space-y-6" noValidate>
+    <form action={action} className="space-y-4" noValidate>
       {rows.map((r) => (
-        <fieldset
-          key={r.teamId}
-          className="rounded-md border border-gray-200 p-4"
-        >
-          <legend className="px-1 text-sm font-semibold">{r.teamName}</legend>
-          <div className="mt-2 grid gap-2 text-sm sm:grid-cols-2">
+        <fieldset key={r.teamId} className="card card-pad">
+          <legend className="px-2 text-sm font-bold tracking-tight">
+            {r.teamName}
+          </legend>
+          <div className="mt-2 grid gap-2.5 text-sm sm:grid-cols-2">
             <Checkbox
               name={`${r.teamId}__in_app_new_challenge`}
               label={strings.in_app_new_challenge}
@@ -81,22 +80,18 @@ export default function PreferencesForm({
 
       {state?.message && (
         <p
-          className={`rounded-md px-3 py-2 text-sm ${
+          className={`rounded-md px-3 py-2 text-sm font-medium ${
             state.message === strings.saved ||
             state.message === "Preferences saved."
-              ? "bg-green-50 text-green-700"
-              : "bg-red-50 text-red-700"
+              ? "pill pill-success"
+              : "pill pill-danger"
           }`}
         >
           {state.message}
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-      >
+      <button type="submit" disabled={pending} className="btn btn-primary">
         {pending ? strings.save_pending : strings.save}
       </button>
     </form>
@@ -113,12 +108,12 @@ function Checkbox({
   defaultChecked: boolean;
 }) {
   return (
-    <label className="flex items-center gap-2">
+    <label className="flex items-center gap-2 cursor-pointer">
       <input
         type="checkbox"
         name={name}
         defaultChecked={defaultChecked}
-        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+        className="h-4 w-4 rounded border-[color:var(--border)] accent-[color:var(--ui-primary)]"
       />
       <span>{label}</span>
     </label>

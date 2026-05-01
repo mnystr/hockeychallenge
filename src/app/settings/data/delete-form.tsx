@@ -21,24 +21,33 @@ export default function DeleteAccountForm({ strings }: { strings: Strings }) {
   return (
     <form action={action} className="space-y-3" noValidate>
       <label className="block text-sm">
-        {strings.confirm_label}{" "}
-        <span className="font-mono font-semibold">{strings.confirm_word}</span>{" "}
-        {strings.confirm_verify}
+        <span className="text-app-fg">
+          {strings.confirm_label}{" "}
+          <span className="mono font-semibold">{strings.confirm_word}</span>{" "}
+          {strings.confirm_verify}
+        </span>
         <input
           name="confirm"
-          className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+          className="input mt-1.5"
           autoComplete="off"
+          style={{
+            borderColor: "color-mix(in oklab, var(--danger) 35%, transparent)",
+          }}
         />
       </label>
       {state?.message && (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-          {state.message}
-        </p>
+        <p className="pill pill-danger px-3 py-2 text-sm">{state.message}</p>
       )}
       <button
         type="submit"
         disabled={pending}
-        className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+        className="btn"
+        style={{
+          background: "var(--danger)",
+          color: "#fff",
+          boxShadow:
+            "0 6px 16px -6px color-mix(in oklab, var(--danger) 60%, transparent)",
+        }}
       >
         {pending ? strings.cta_pending : strings.cta}
       </button>

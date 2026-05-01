@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getT } from "@/lib/i18n/server";
 import { publicMediaUrl } from "@/lib/media/url";
+import { Bell, Shield, Target, Trophy, User, Users } from "@/components/icons";
 import { setDefaultTeam } from "./actions";
 
 export default async function TeamPage({
@@ -61,144 +62,182 @@ export default async function TeamPage({
   const t = await getT();
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-10">
-      {headerUrl && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={headerUrl}
-          alt=""
-          className="mb-4 h-40 w-full rounded-md object-cover sm:h-48"
-        />
-      )}
-      <div className="mb-6 flex items-start justify-between gap-4">
-        <div className="flex items-start gap-3">
-          {logoUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={logoUrl}
-              alt=""
-              className="h-14 w-14 shrink-0 rounded-md border border-gray-200 object-cover"
-            />
-          )}
-          <div>
-          <h1
-            className="text-3xl font-bold"
-            style={{ color: "var(--theme-primary, inherit)" }}
-          >
-            {team.name}
-          </h1>
-          {team.status === "orphaned" && (
-            <p className="mt-1 text-sm text-amber-600">{t("team.orphaned")}</p>
-          )}
-          {otherTeams.length > 0 && (
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-600">
-              <span>{t("team.switch_to")}</span>
-              {otherTeams.map((o) => (
-                <Link
-                  key={o.id}
-                  href={`/t/${o.slug}`}
-                  className="rounded-md border border-gray-300 px-2 py-0.5 hover:bg-gray-50"
-                >
-                  {o.name}
-                </Link>
-              ))}
-              {!isDefault && membership && (
-                <form
-                  action={async () => {
-                    "use server";
-                    await setDefaultTeam(team.id);
-                  }}
-                >
-                  <button className="rounded-md border border-gray-300 px-2 py-0.5 hover:bg-gray-50">
-                    {t("team.set_default")}
-                  </button>
-                </form>
-              )}
-              {isDefault && (
-                <span className="text-gray-400">{t("team.default_tag")}</span>
+    <main className="mx-auto w-full max-w-4xl px-4 py-8">
+      {/* Hero */}
+      <section className={`hero-panel${headerUrl ? " hero-panel--photo" : ""}`}>
+        {headerUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={headerUrl} alt="" className="hero-image" />
+        )}
+        <div
+          className={
+            headerUrl
+              ? "absolute inset-x-1.5 top-1.5 z-[2] flex flex-wrap items-start justify-between gap-4 p-5"
+              : "relative flex flex-wrap items-start justify-between gap-4"
+          }
+        >
+          <div className="flex items-start gap-4">
+            {logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={logoUrl}
+                alt=""
+                className="h-16 w-16 shrink-0 rounded-2xl border-2 border-white/30 bg-white/10 object-cover shadow-lg backdrop-blur"
+              />
+            ) : (
+              <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl border-2 border-white/30 bg-white/10 text-2xl font-extrabold text-white backdrop-blur">
+                {team.name.slice(0, 1)}
+              </div>
+            )}
+            <div>
+              <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
+                {team.name}
+              </h1>
+              {team.status === "orphaned" && (
+                <p className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-amber-400/20 px-2.5 py-0.5 text-xs font-semibold text-amber-100 ring-1 ring-amber-200/60">
+                  {t("team.orphaned")}
+                </p>
               )}
             </div>
-          )}
           </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Link
-            href="/notifications"
-            className="relative rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50"
-          >
-            {t("nav.notifications")}
-            {unreadCount > 0 && (
-              <span className="ml-1 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-blue-600 px-1.5 text-xs font-medium text-white">
-                {unreadCount}
-              </span>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/notifications"
+              className="relative inline-flex items-center gap-1.5 rounded-full border border-white/40 bg-white/10 px-3 py-1.5 text-sm font-medium text-white backdrop-blur transition hover:bg-white/20"
+            >
+              <Bell className="h-4 w-4" />
+              <span className="hidden sm:inline">{t("nav.notifications")}</span>
+              {unreadCount > 0 && (
+                <span className="ml-0.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-white px-1.5 text-[11px] font-bold text-[color:var(--ui-primary)]">
+                  {unreadCount}
+                </span>
+              )}
+            </Link>
+            {isSuperAdmin && (
+              <Link
+                href="/admin"
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/40 bg-white/10 px-3 py-1.5 text-sm font-medium text-white backdrop-blur transition hover:bg-white/20"
+              >
+                <Shield className="h-4 w-4" />
+                {t("nav.super_admin")}
+              </Link>
             )}
-          </Link>
-          {isSuperAdmin && (
-            <Link
-              href="/admin"
-              className="rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50"
-            >
-              {t("nav.super_admin")}
-            </Link>
-          )}
-          {(isTeamAdmin || isSuperAdmin) && (
-            <Link
-              href={`/t/${slug}/admin`}
-              className="rounded-md border border-gray-300 px-3 py-1.5 text-sm hover:bg-gray-50"
-            >
-              {t("nav.admin")}
-            </Link>
-          )}
+            {(isTeamAdmin || isSuperAdmin) && (
+              <Link
+                href={`/t/${slug}/admin`}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/40 bg-white/10 px-3 py-1.5 text-sm font-medium text-white backdrop-blur transition hover:bg-white/20"
+              >
+                <Shield className="h-4 w-4" />
+                {t("nav.admin")}
+              </Link>
+            )}
+          </div>
         </div>
-      </div>
+      </section>
 
-      <nav className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Link
+      {otherTeams.length > 0 && (
+        <div className="mt-5 flex flex-wrap items-center gap-2 text-xs">
+          <span className="text-muted">{t("team.switch_to")}</span>
+          {otherTeams.map((o) => (
+            <Link
+              key={o.id}
+              href={`/t/${o.slug}`}
+              className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-2.5 py-0.5 font-medium text-app-fg shadow-sm transition hover:bg-[color:var(--surface-2)]"
+            >
+              {o.name}
+            </Link>
+          ))}
+          {!isDefault && membership && (
+            <form
+              action={async () => {
+                "use server";
+                await setDefaultTeam(team.id);
+              }}
+            >
+              <button className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-2.5 py-0.5 font-medium text-app-fg shadow-sm transition hover:bg-[color:var(--surface-2)]">
+                {t("team.set_default")}
+              </button>
+            </form>
+          )}
+          {isDefault && <span className="text-muted-2">{t("team.default_tag")}</span>}
+        </div>
+      )}
+
+      <nav className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <NavCard
           href={`/t/${slug}/challenges`}
-          className="rounded-md border border-gray-200 p-4 hover:bg-gray-50"
-        >
-          <div className="font-semibold">{t("nav.challenges")}</div>
-          <div className="mt-1 text-sm text-gray-500">
-            {t("team.challenges_card")}
-          </div>
-        </Link>
-        <Link
+          icon={<Target className="h-6 w-6" />}
+          title={t("nav.challenges")}
+          body={t("team.challenges_card")}
+        />
+        <NavCard
           href={`/t/${slug}/leaderboards`}
-          className="rounded-md border border-gray-200 p-4 hover:bg-gray-50"
-        >
-          <div className="font-semibold">{t("nav.leaderboards")}</div>
-          <div className="mt-1 text-sm text-gray-500">
-            {t("team.leaderboards_card")}
-          </div>
-        </Link>
-        <Link
+          icon={<Trophy className="h-6 w-6" />}
+          title={t("nav.leaderboards")}
+          body={t("team.leaderboards_card")}
+          tone="accent"
+        />
+        <NavCard
           href={`/t/${slug}/members`}
-          className="rounded-md border border-gray-200 p-4 hover:bg-gray-50"
-        >
-          <div className="font-semibold">{t("nav.roster")}</div>
-          <div className="mt-1 text-sm text-gray-500">
-            {t("team.roster_card")}
-          </div>
-        </Link>
-        <Link
+          icon={<Users className="h-6 w-6" />}
+          title={t("nav.roster")}
+          body={t("team.roster_card")}
+        />
+        <NavCard
           href={`/t/${slug}/profile`}
-          className="rounded-md border border-gray-200 p-4 hover:bg-gray-50"
-        >
-          <div className="font-semibold">{t("nav.profile")}</div>
-          <div className="mt-1 text-sm text-gray-500">
-            {t("team.profile_card")}
-          </div>
-        </Link>
+          icon={<User className="h-6 w-6" />}
+          title={t("nav.profile")}
+          body={t("team.profile_card")}
+        />
       </nav>
 
-      <form action="/logout" method="post" className="mt-10">
-        <button
-          type="submit"
-          className="text-sm text-gray-500 hover:text-gray-700 hover:underline"
-        >
-          {t("common.sign_out")}
-        </button>
-      </form>
+      <div className="mt-10 flex items-center justify-between text-xs text-muted-2">
+        <Link href="/settings/data" className="hover:underline">
+          {t("settings_data.title")}
+        </Link>
+        <form action="/logout" method="post">
+          <button type="submit" className="hover:underline">
+            {t("common.sign_out")}
+          </button>
+        </form>
+      </div>
     </main>
+  );
+}
+
+function NavCard({
+  href,
+  icon,
+  title,
+  body,
+  tone = "primary",
+}: {
+  href: string;
+  icon: React.ReactNode;
+  title: string;
+  body: string;
+  tone?: "primary" | "accent";
+}) {
+  const iconBg =
+    tone === "accent"
+      ? "color-mix(in oklab, var(--ui-accent) 18%, var(--surface))"
+      : "color-mix(in oklab, var(--ui-primary) 14%, var(--surface))";
+  const iconFg =
+    tone === "accent"
+      ? "color-mix(in oklab, var(--ui-accent) 70%, black)"
+      : "color-mix(in oklab, var(--ui-primary) 75%, black)";
+  return (
+    <Link href={href} className="card card-pad card-hover card-link">
+      <div className="flex items-center gap-3">
+        <div
+          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
+          style={{ background: iconBg, color: iconFg }}
+        >
+          {icon}
+        </div>
+        <div className="font-semibold tracking-tight">{title}</div>
+      </div>
+      <div className="mt-2 text-sm text-muted">{body}</div>
+    </Link>
   );
 }

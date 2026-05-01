@@ -19,6 +19,7 @@ function parseForm(formData: FormData) {
     unit: s("unit"),
     starts_at: s("starts_at"),
     ends_at: s("ends_at"),
+    card_theme: s("card_theme"),
   });
 }
 

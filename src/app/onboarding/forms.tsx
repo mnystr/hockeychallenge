@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { Sparkles } from "@/components/icons";
 import { redeemInvite, requestTeam } from "./actions";
 
 type Tab = "join" | "create";
@@ -16,8 +17,6 @@ type Strings = {
   display_name_ph: string;
   display_name_hint: string;
   jersey_number: string;
-  pronouns: string;
-  pronouns_ph: string;
   apply_join: string;
   apply_join_pending: string;
   team_name: string;
@@ -38,48 +37,56 @@ export default function OnboardingForms({
   const [tab, setTab] = useState<Tab>("join");
 
   return (
-    <main className="mx-auto max-w-lg px-4 py-10">
-      <h1 className="mb-1 text-3xl font-bold">
-        {strings.welcome}
-        {email ? `, ${email}` : ""}
-      </h1>
-      <p className="mb-8 text-sm text-gray-500">{strings.intro}</p>
+    <main className="mx-auto w-full max-w-lg px-4 py-10">
+      <div className="card card-pad-lg">
+        <span className="pill pill-primary inline-flex items-center gap-1.5">
+          <Sparkles className="h-3 w-3" /> hockeychallenge
+        </span>
+        <h1 className="mt-3 text-3xl font-extrabold tracking-tight">
+          {strings.welcome}
+          {email ? `, ${email}` : ""}
+        </h1>
+        <p className="mb-6 mt-1 text-sm text-muted">{strings.intro}</p>
 
-      <div className="mb-6 flex rounded-md border border-gray-200 p-1 text-sm">
-        <button
-          type="button"
-          onClick={() => setTab("join")}
-          className={`flex-1 rounded px-3 py-2 font-medium ${
-            tab === "join"
-              ? "bg-blue-600 text-white"
-              : "text-gray-700 hover:bg-gray-100"
-          }`}
+        <div
+          className="mb-6 flex rounded-xl border border-[color:var(--border)] p-1 text-sm"
+          style={{ background: "var(--surface-2)" }}
         >
-          {strings.tab_join}
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("create")}
-          className={`flex-1 rounded px-3 py-2 font-medium ${
-            tab === "create"
-              ? "bg-blue-600 text-white"
-              : "text-gray-700 hover:bg-gray-100"
-          }`}
-        >
-          {strings.tab_request}
-        </button>
+          <button
+            type="button"
+            onClick={() => setTab("join")}
+            className={`flex-1 rounded-lg px-3 py-2 font-semibold transition ${
+              tab === "join"
+                ? "bg-[color:var(--surface)] shadow-sm"
+                : "text-muted hover:text-app-fg"
+            }`}
+          >
+            {strings.tab_join}
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("create")}
+            className={`flex-1 rounded-lg px-3 py-2 font-semibold transition ${
+              tab === "create"
+                ? "bg-[color:var(--surface)] shadow-sm"
+                : "text-muted hover:text-app-fg"
+            }`}
+          >
+            {strings.tab_request}
+          </button>
+        </div>
+
+        {tab === "join" ? (
+          <JoinForm strings={strings} />
+        ) : (
+          <RequestForm strings={strings} />
+        )}
       </div>
 
-      {tab === "join" ? (
-        <JoinForm strings={strings} />
-      ) : (
-        <RequestForm strings={strings} />
-      )}
-
-      <form action="/logout" method="post" className="mt-8 text-center">
+      <form action="/logout" method="post" className="mt-6 text-center">
         <button
           type="submit"
-          className="text-sm text-gray-500 hover:text-gray-700 hover:underline"
+          className="text-sm text-muted-2 hover:text-app-fg hover:underline"
         >
           {strings.sign_out}
         </button>
@@ -109,33 +116,23 @@ function JoinForm({ strings }: { strings: Strings }) {
         hint={strings.display_name_hint}
         required
       />
-      <div className="grid grid-cols-2 gap-3">
-        <Field
-          name="jerseyNumber"
-          label={strings.jersey_number}
-          type="number"
-          min={0}
-          max={999}
-          errors={state?.errors?.jerseyNumber}
-        />
-        <Field
-          name="pronouns"
-          label={strings.pronouns}
-          placeholder={strings.pronouns_ph}
-          errors={state?.errors?.pronouns}
-        />
-      </div>
+      <Field
+        name="jerseyNumber"
+        label={strings.jersey_number}
+        type="number"
+        min={0}
+        max={999}
+        errors={state?.errors?.jerseyNumber}
+      />
 
       {state?.message && (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-          {state.message}
-        </p>
+        <p className="pill pill-danger px-3 py-2 text-sm">{state.message}</p>
       )}
 
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+        className="btn btn-primary btn-lg w-full"
       >
         {pending ? strings.apply_join_pending : strings.apply_join}
       </button>
@@ -158,15 +155,13 @@ function RequestForm({ strings }: { strings: Strings }) {
       />
 
       {state?.message && (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-          {state.message}
-        </p>
+        <p className="pill pill-danger px-3 py-2 text-sm">{state.message}</p>
       )}
 
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+        className="btn btn-primary btn-lg w-full"
       >
         {pending ? strings.submit_request_pending : strings.submit_request}
       </button>
@@ -201,7 +196,7 @@ function Field({
 }: FieldProps) {
   return (
     <div>
-      <label htmlFor={name} className="mb-1 block text-sm font-medium">
+      <label htmlFor={name} className="label">
         {label}
       </label>
       <input
@@ -213,10 +208,10 @@ function Field({
         autoCapitalize={autoCapitalize}
         min={min}
         max={max}
-        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        className="input"
       />
-      {hint && <p className="mt-1 text-xs text-gray-500">{hint}</p>}
-      {errors && <p className="mt-1 text-sm text-red-600">{errors[0]}</p>}
+      {hint && <p className="hint">{hint}</p>}
+      {errors && <p className="field-error">{errors[0]}</p>}
     </div>
   );
 }

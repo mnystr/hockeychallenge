@@ -3,26 +3,44 @@
 import { useActionState } from "react";
 import { createInvite, type CreateInviteFormState } from "../actions";
 
-export default function CreateInviteForm({ slug }: { slug: string }) {
+export type CreateInviteFormStrings = {
+  code_optional: string;
+  auto_generated: string;
+  expires_in_days: string;
+  max_uses: string;
+  creating: string;
+  create_invite: string;
+};
+
+export default function CreateInviteForm({
+  slug,
+  strings,
+}: {
+  slug: string;
+  strings: CreateInviteFormStrings;
+}) {
   const bound = createInvite.bind(null, slug);
   const [state, action, pending] = useActionState<CreateInviteFormState, FormData>(
     bound,
     undefined,
   );
 
+  const isSuccess =
+    state?.message?.startsWith("Invite created") ?? false;
+
   return (
     <form action={action} className="space-y-3" noValidate>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Field
           name="code"
-          label="Code (optional)"
-          placeholder="auto-generated"
+          label={strings.code_optional}
+          placeholder={strings.auto_generated}
           errors={state?.errors?.code}
           autoCapitalize="characters"
         />
         <Field
           name="expiresInDays"
-          label="Expires in (days)"
+          label={strings.expires_in_days}
           type="number"
           placeholder="7"
           min={1}
@@ -31,7 +49,7 @@ export default function CreateInviteForm({ slug }: { slug: string }) {
         />
         <Field
           name="maxUses"
-          label="Max uses"
+          label={strings.max_uses}
           type="number"
           placeholder="1"
           min={1}
@@ -42,11 +60,18 @@ export default function CreateInviteForm({ slug }: { slug: string }) {
 
       {state?.message && !state.errors && (
         <p
-          className={`rounded-md px-3 py-2 text-sm ${
-            state.message.startsWith("Invite created")
-              ? "bg-green-50 text-green-700"
-              : "bg-red-50 text-red-700"
-          }`}
+          className="rounded-md px-3 py-2 text-sm"
+          style={
+            isSuccess
+              ? {
+                  background: "var(--success-bg)",
+                  color: "var(--success-fg)",
+                }
+              : {
+                  background: "var(--danger-bg)",
+                  color: "var(--danger-fg)",
+                }
+          }
         >
           {state.message}
         </p>
@@ -55,9 +80,9 @@ export default function CreateInviteForm({ slug }: { slug: string }) {
       <button
         type="submit"
         disabled={pending}
-        className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+        className="btn btn-primary"
       >
-        {pending ? "Creating..." : "Create invite"}
+        {pending ? strings.creating : strings.create_invite}
       </button>
     </form>
   );
@@ -84,7 +109,7 @@ function Field({
 }) {
   return (
     <div>
-      <label htmlFor={name} className="mb-1 block text-xs font-medium text-gray-700">
+      <label htmlFor={name} className="label">
         {label}
       </label>
       <input
@@ -95,9 +120,9 @@ function Field({
         autoCapitalize={autoCapitalize}
         min={min}
         max={max}
-        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        className="input"
       />
-      {errors && <p className="mt-1 text-xs text-red-600">{errors[0]}</p>}
+      {errors && <p className="field-error">{errors[0]}</p>}
     </div>
   );
 }

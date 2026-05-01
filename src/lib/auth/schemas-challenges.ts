@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CHALLENGE_CARD_THEMES } from "@/lib/challenges/card-themes";
 
 const optionalNumber = (min: number, max: number) =>
   z
@@ -32,6 +33,17 @@ export const updateChallengeSchema = z
     starts_at: optionalTimestamp,
     ends_at: optionalTimestamp,
     recurrence: z.enum(["none", "weekly", "monthly"]),
+    card_theme: z
+      .string()
+      .trim()
+      .optional()
+      .transform((v) => (v && v !== "default" ? v : null))
+      .refine(
+        (v) =>
+          v === null ||
+          (CHALLENGE_CARD_THEMES as readonly string[]).includes(v),
+        { error: "Unknown card theme." },
+      ),
   })
   .refine(
     (v) =>

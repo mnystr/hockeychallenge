@@ -29,7 +29,6 @@ export const inviteRedeemSchema = z.object({
     .refine((v) => v === null || (Number.isInteger(v) && v >= 0 && v <= 999), {
       error: "Jersey number must be 0–999.",
     }),
-  pronouns: z.string().trim().max(30).optional().transform((v) => v || null),
 });
 
 export type InviteRedeemFormState =
@@ -38,7 +37,6 @@ export type InviteRedeemFormState =
         code?: string[];
         displayName?: string[];
         jerseyNumber?: string[];
-        pronouns?: string[];
       };
       message?: string;
     }

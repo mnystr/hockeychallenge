@@ -29,7 +29,7 @@ export async function GET(
     supabase
       .from("profiles")
       .select(
-        "user_id, display_name, jersey_number, pronouns, visibility, approved",
+        "user_id, display_name, jersey_number, visibility, approved",
       )
       .eq("team_id", ctx.teamId)
       .is("deleted_at", null),
@@ -65,7 +65,6 @@ export async function GET(
   const header = [
     "display_name",
     "jersey_number",
-    "pronouns",
     "visibility",
     "role",
     "status",
@@ -83,7 +82,6 @@ export async function GET(
       return [
         p.display_name,
         p.jersey_number ?? "",
-        p.pronouns ?? "",
         p.visibility,
         m?.role ?? "",
         m?.status ?? "",

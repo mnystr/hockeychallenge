@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireTeamAdmin } from "@/lib/auth/session";
 import { publicMediaUrl } from "@/lib/media/url";
+import { getT } from "@/lib/i18n/server";
 import {
   approveMembership,
   rejectMembership,
@@ -39,12 +40,12 @@ export default async function ApprovalsPage({
   const userIds = (pendingMemberships ?? []).map((m) => m.user_id);
   const profilesByUser = new Map<
     string,
-    { display_name: string; jersey_number: number | null; pronouns: string | null }
+    { display_name: string; jersey_number: number | null }
   >();
   if (userIds.length > 0) {
     const { data: profiles } = await supabase
       .from("profiles")
-      .select("user_id, display_name, jersey_number, pronouns")
+      .select("user_id, display_name, jersey_number")
       .eq("team_id", ctx.teamId)
       .in("user_id", userIds)
       .is("deleted_at", null);
@@ -52,7 +53,6 @@ export default async function ApprovalsPage({
       profilesByUser.set(p.user_id, {
         display_name: p.display_name,
         jersey_number: p.jersey_number,
-        pronouns: p.pronouns,
       });
     }
   }
@@ -60,20 +60,18 @@ export default async function ApprovalsPage({
   const { data: pendingChanges } = await supabase
     .from("profile_change_requests")
     .select(
-      "id, profile_id, user_id, created_at, proposed_display_name, proposed_jersey_number, proposed_pronouns, proposed_visibility, proposed_picture_path",
+      "id, profile_id, user_id, created_at, proposed_display_name, proposed_jersey_number, proposed_visibility, proposed_picture_path",
     )
     .eq("team_id", ctx.teamId)
     .eq("status", "pending")
     .order("created_at", { ascending: true });
 
-  // Fetch current profiles for each pending change so we can render a diff.
   const changeProfileIds = (pendingChanges ?? []).map((c) => c.profile_id);
   const currentProfilesById = new Map<
     string,
     {
       display_name: string;
       jersey_number: number | null;
-      pronouns: string | null;
       visibility: string;
       profile_picture_path: string | null;
     }
@@ -82,14 +80,13 @@ export default async function ApprovalsPage({
     const { data: currentProfiles } = await supabase
       .from("profiles")
       .select(
-        "id, display_name, jersey_number, pronouns, visibility, profile_picture_path",
+        "id, display_name, jersey_number, visibility, profile_picture_path",
       )
       .in("id", changeProfileIds);
     for (const p of currentProfiles ?? []) {
       currentProfilesById.set(p.id, {
         display_name: p.display_name,
         jersey_number: p.jersey_number,
-        pronouns: p.pronouns,
         visibility: p.visibility,
         profile_picture_path: p.profile_picture_path,
       });
@@ -100,39 +97,46 @@ export default async function ApprovalsPage({
     (pendingMemberships && pendingMemberships.length > 0) ||
     (pendingChanges && pendingChanges.length > 0);
 
+  const t = await getT();
+
   return (
-    <main className="mx-auto max-w-2xl px-4 py-10">
+    <main className="mx-auto w-full max-w-2xl px-4 py-8">
       <Link
         href={`/t/${slug}/admin`}
-        className="mb-2 inline-block text-sm text-blue-600 hover:underline"
+        className="mb-3 inline-block text-sm font-medium text-ui-primary hover:underline"
       >
-        ← Admin
+        {t("admin.back_admin")}
       </Link>
-      <h1 className="mb-6 text-3xl font-bold">Pending approvals</h1>
+      <h1 className="mb-6 text-3xl font-extrabold tracking-tight">
+        {t("admin.approvals.title")}
+      </h1>
 
       {pendingMemberships && pendingMemberships.length > 0 && (
         <section className="mb-8">
-          <h2 className="mb-3 text-lg font-semibold">New members</h2>
+          <h2 className="section-title mb-3">
+            {t("admin.approvals.new_members")}
+          </h2>
           <ul className="space-y-3">
             {pendingMemberships.map((m) => {
               const profile = profilesByUser.get(m.user_id) ?? null;
               return (
                 <li
                   key={m.id}
-                  className="flex flex-col gap-3 rounded-md border border-gray-200 p-4 sm:flex-row sm:items-center sm:justify-between"
+                  className="card card-pad flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div>
-                    <div className="font-medium">
-                      {profile?.display_name ?? "(no profile)"}
+                    <div className="font-semibold tracking-tight">
+                      {profile?.display_name ?? "—"}
                     </div>
-                    <div className="mt-1 text-xs text-gray-500">
+                    <div className="mt-1 text-xs text-muted">
                       {profile?.jersey_number !== null &&
                       profile?.jersey_number !== undefined
                         ? `#${profile.jersey_number}`
-                        : "No jersey number"}
-                      {profile?.pronouns ? ` · ${profile.pronouns}` : ""}
-                      {" · applied "}
-                      {new Date(m.created_at).toLocaleString()}
+                        : t("admin.approvals.no_jersey")}
+                      {" · "}
+                      {t("admin.approvals.applied", {
+                        date: new Date(m.created_at).toLocaleString(),
+                      })}
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -142,8 +146,8 @@ export default async function ApprovalsPage({
                         await approveMembership(slug, m.id);
                       }}
                     >
-                      <button className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700">
-                        Approve
+                      <button className="btn btn-primary btn-sm">
+                        {t("admin.approvals.approve")}
                       </button>
                     </form>
                     <form
@@ -152,8 +156,8 @@ export default async function ApprovalsPage({
                         await rejectMembership(slug, m.id, null);
                       }}
                     >
-                      <button className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                        Reject
+                      <button className="btn btn-secondary btn-sm">
+                        {t("admin.approvals.reject")}
                       </button>
                     </form>
                   </div>
@@ -166,60 +170,76 @@ export default async function ApprovalsPage({
 
       {pendingChanges && pendingChanges.length > 0 && (
         <section>
-          <h2 className="mb-3 text-lg font-semibold">Profile changes</h2>
+          <h2 className="section-title mb-3">
+            {t("admin.approvals.profile_changes")}
+          </h2>
           <ul className="space-y-3">
             {pendingChanges.map((c) => {
               const current = currentProfilesById.get(c.profile_id);
               return (
                 <li
                   key={c.id}
-                  className="flex flex-col gap-3 rounded-md border border-gray-200 p-4 sm:flex-row sm:items-start sm:justify-between"
+                  className="card card-pad flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
                 >
                   <div className="flex-1">
-                    <div className="font-medium">
-                      {current?.display_name ?? "(no profile)"}
+                    <div className="font-semibold tracking-tight">
+                      {current?.display_name ?? "—"}
                     </div>
-                    <ul className="mt-1 text-xs text-gray-600">
+                    <ul className="mt-2 space-y-1 text-xs text-muted">
                       {c.proposed_display_name &&
                         c.proposed_display_name !== current?.display_name && (
                           <li>
-                            Name: <span className="line-through">{current?.display_name}</span> →{" "}
-                            <span className="font-medium text-gray-900">{c.proposed_display_name}</span>
+                            {t("admin.approvals.diff_name")}{" "}
+                            <span className="line-through">
+                              {current?.display_name}
+                            </span>{" "}
+                            →{" "}
+                            <span className="font-medium text-app-fg">
+                              {c.proposed_display_name}
+                            </span>
                           </li>
                         )}
                       {c.proposed_jersey_number !== null &&
                         c.proposed_jersey_number !== current?.jersey_number && (
                           <li>
-                            Jersey: <span className="line-through">{current?.jersey_number ?? "—"}</span> →{" "}
-                            <span className="font-medium text-gray-900">#{c.proposed_jersey_number}</span>
-                          </li>
-                        )}
-                      {c.proposed_pronouns &&
-                        c.proposed_pronouns !== current?.pronouns && (
-                          <li>
-                            Pronouns: <span className="line-through">{current?.pronouns ?? "—"}</span> →{" "}
-                            <span className="font-medium text-gray-900">{c.proposed_pronouns}</span>
+                            {t("admin.approvals.diff_jersey")}{" "}
+                            <span className="line-through">
+                              {current?.jersey_number ?? "—"}
+                            </span>{" "}
+                            →{" "}
+                            <span className="font-medium text-app-fg">
+                              #{c.proposed_jersey_number}
+                            </span>
                           </li>
                         )}
                       {c.proposed_visibility &&
                         c.proposed_visibility !== current?.visibility && (
                           <li>
-                            Visibility: <span className="line-through">{current?.visibility}</span> →{" "}
-                            <span className="font-medium text-gray-900">{c.proposed_visibility}</span>
+                            {t("admin.approvals.diff_visibility")}{" "}
+                            <span className="line-through">
+                              {current?.visibility}
+                            </span>{" "}
+                            →{" "}
+                            <span className="font-medium text-app-fg">
+                              {c.proposed_visibility}
+                            </span>
                           </li>
                         )}
                       {c.proposed_picture_path && (
                         <li className="mt-2 flex items-center gap-3">
-                          <span>Picture:</span>
+                          <span>{t("admin.approvals.diff_picture")}</span>
                           {current?.profile_picture_path ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
-                              src={publicMediaUrl(current.profile_picture_path) ?? ""}
+                              src={
+                                publicMediaUrl(current.profile_picture_path) ??
+                                ""
+                              }
                               alt="current"
                               className="h-12 w-12 rounded-full object-cover opacity-50"
                             />
                           ) : (
-                            <span className="text-gray-400">—</span>
+                            <span className="text-muted-2">—</span>
                           )}
                           <span>→</span>
                           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -231,8 +251,10 @@ export default async function ApprovalsPage({
                         </li>
                       )}
                     </ul>
-                    <div className="mt-1 text-xs text-gray-500">
-                      Submitted {new Date(c.created_at).toLocaleString()}
+                    <div className="mt-2 text-xs text-muted-2">
+                      {t("admin.approvals.submitted", {
+                        date: new Date(c.created_at).toLocaleString(),
+                      })}
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -242,8 +264,8 @@ export default async function ApprovalsPage({
                         await approveProfileChange(slug, c.id);
                       }}
                     >
-                      <button className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700">
-                        Approve
+                      <button className="btn btn-primary btn-sm">
+                        {t("admin.approvals.approve")}
                       </button>
                     </form>
                     <form
@@ -252,8 +274,8 @@ export default async function ApprovalsPage({
                         await rejectProfileChange(slug, c.id, null);
                       }}
                     >
-                      <button className="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                        Reject
+                      <button className="btn btn-secondary btn-sm">
+                        {t("admin.approvals.reject")}
                       </button>
                     </form>
                   </div>
@@ -265,7 +287,9 @@ export default async function ApprovalsPage({
       )}
 
       {!hasAnything && (
-        <p className="text-sm text-gray-500">Nothing pending.</p>
+        <p className="card card-pad text-sm text-muted">
+          {t("admin.approvals.nothing_pending")}
+        </p>
       )}
     </main>
   );

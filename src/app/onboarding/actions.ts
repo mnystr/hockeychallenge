@@ -18,7 +18,6 @@ export async function redeemInvite(
     code: formData.get("code"),
     displayName: formData.get("displayName"),
     jerseyNumber: formData.get("jerseyNumber"),
-    pronouns: formData.get("pronouns"),
   });
 
   if (!parsed.success) {
@@ -33,7 +32,10 @@ export async function redeemInvite(
     p_code: parsed.data.code,
     p_display_name: parsed.data.displayName,
     p_jersey_number: parsed.data.jerseyNumber,
-    p_pronouns: parsed.data.pronouns,
+    // Legacy column the schema still defines; we no longer collect it
+    // from users but keep the RPC parameter explicit so PostgREST's
+    // overload resolution doesn't get confused.
+    p_pronouns: null,
   });
 
   if (error) {
