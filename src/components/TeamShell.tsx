@@ -5,6 +5,7 @@ import { publicMediaUrl } from "@/lib/media/url";
 import {
   Bell,
   Shield,
+  ShieldStar,
   Target,
   Trophy,
   User,
@@ -128,7 +129,7 @@ export default async function TeamShell({
               aria-label={t("nav.super_admin")}
               className="team-shell-chip"
             >
-              <Shield className="h-4 w-4" />
+              <ShieldStar className="h-4 w-4" />
               <span className="hidden sm:inline">{t("nav.super_admin")}</span>
             </Link>
           )}

@@ -202,6 +202,28 @@ export function Shield(props: IconProps) {
   );
 }
 
+export function ShieldStar(props: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.7}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      {...props}
+    >
+      <path d="M12 3 4 6v6c0 5 3.5 8.5 8 9 4.5-.5 8-4 8-9V6l-8-3Z" />
+      <path
+        d="M12 8.5 12.8 10.9 15.3 10.9 13.3 12.4 14.1 14.8 12 13.4 9.9 14.8 10.7 12.4 8.7 10.9 11.2 10.9Z"
+        fill="currentColor"
+        stroke="none"
+      />
+    </svg>
+  );
+}
+
 export function Target(props: IconProps) {
   return (
     <svg

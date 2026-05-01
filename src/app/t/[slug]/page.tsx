@@ -3,7 +3,15 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getT } from "@/lib/i18n/server";
 import { publicMediaUrl } from "@/lib/media/url";
-import { Bell, Shield, Target, Trophy, User, Users } from "@/components/icons";
+import {
+  Bell,
+  Shield,
+  ShieldStar,
+  Target,
+  Trophy,
+  User,
+  Users,
+} from "@/components/icons";
 import { setDefaultTeam } from "./actions";
 
 export default async function TeamPage({
@@ -61,78 +69,105 @@ export default async function TeamPage({
   const isDefault = appUser?.default_team_id === team.id;
   const t = await getT();
 
+  const logoBlock = logoUrl ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={logoUrl}
+      alt=""
+      className="h-16 w-16 shrink-0 rounded-2xl border-2 border-white/30 bg-white/10 object-cover shadow-lg backdrop-blur"
+    />
+  ) : (
+    <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl border-2 border-white/30 bg-white/10 text-2xl font-extrabold text-white backdrop-blur">
+      {team.name.slice(0, 1)}
+    </div>
+  );
+
+  const titleBlock = (
+    <div>
+      <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
+        {team.name}
+      </h1>
+      {team.status === "orphaned" && (
+        <p className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-amber-400/20 px-2.5 py-0.5 text-xs font-semibold text-amber-100 ring-1 ring-amber-200/60">
+          {t("team.orphaned")}
+        </p>
+      )}
+    </div>
+  );
+
+  const buttonsBlock = (
+    <div className="flex flex-wrap gap-2">
+      <Link
+        href="/notifications"
+        className="relative inline-flex items-center gap-1.5 rounded-full border border-white/40 bg-white/10 px-3 py-1.5 text-sm font-medium text-white backdrop-blur transition hover:bg-white/20"
+      >
+        <Bell className="h-4 w-4" />
+        <span className="hidden sm:inline">{t("nav.notifications")}</span>
+        {unreadCount > 0 && (
+          <span className="ml-0.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-white px-1.5 text-[11px] font-bold text-[color:var(--ui-primary)]">
+            {unreadCount}
+          </span>
+        )}
+      </Link>
+      {isSuperAdmin && (
+        <Link
+          href="/admin"
+          className="inline-flex items-center gap-1.5 rounded-full border border-white/40 bg-white/10 px-3 py-1.5 text-sm font-medium text-white backdrop-blur transition hover:bg-white/20"
+        >
+          <ShieldStar className="h-4 w-4" />
+          {t("nav.super_admin")}
+        </Link>
+      )}
+      {(isTeamAdmin || isSuperAdmin) && (
+        <Link
+          href={`/t/${slug}/admin`}
+          className="inline-flex items-center gap-1.5 rounded-full border border-white/40 bg-white/10 px-3 py-1.5 text-sm font-medium text-white backdrop-blur transition hover:bg-white/20"
+        >
+          <Shield className="h-4 w-4" />
+          {t("nav.admin")}
+        </Link>
+      )}
+    </div>
+  );
+
   return (
     <main className="mx-auto w-full max-w-4xl px-4 py-8">
       {/* Hero */}
       <section className={`hero-panel${headerUrl ? " hero-panel--photo" : ""}`}>
-        {headerUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={headerUrl} alt="" className="hero-image" />
-        )}
-        <div
-          className={
-            headerUrl
-              ? "absolute inset-x-1.5 top-1.5 z-[2] flex flex-wrap items-start justify-between gap-4 p-5"
-              : "relative flex flex-wrap items-start justify-between gap-4"
-          }
-        >
-          <div className="flex items-start gap-4">
-            {logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={logoUrl}
-                alt=""
-                className="h-16 w-16 shrink-0 rounded-2xl border-2 border-white/30 bg-white/10 object-cover shadow-lg backdrop-blur"
-              />
-            ) : (
-              <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl border-2 border-white/30 bg-white/10 text-2xl font-extrabold text-white backdrop-blur">
-                {team.name.slice(0, 1)}
-              </div>
-            )}
-            <div>
-              <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
-                {team.name}
-              </h1>
-              {team.status === "orphaned" && (
-                <p className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-amber-400/20 px-2.5 py-0.5 text-xs font-semibold text-amber-100 ring-1 ring-amber-200/60">
-                  {t("team.orphaned")}
-                </p>
-              )}
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Link
-              href="/notifications"
-              className="relative inline-flex items-center gap-1.5 rounded-full border border-white/40 bg-white/10 px-3 py-1.5 text-sm font-medium text-white backdrop-blur transition hover:bg-white/20"
+        {headerUrl ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={headerUrl} alt="" className="hero-image" />
+            <div
+              className="flex items-end gap-3 sm:gap-4"
+              style={{
+                position: "absolute",
+                bottom: "0.375rem",
+                left: "0.375rem",
+                right: "0.375rem",
+                zIndex: 2,
+                padding: "1rem 1.25rem",
+              }}
             >
-              <Bell className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("nav.notifications")}</span>
-              {unreadCount > 0 && (
-                <span className="ml-0.5 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-white px-1.5 text-[11px] font-bold text-[color:var(--ui-primary)]">
-                  {unreadCount}
-                </span>
-              )}
-            </Link>
-            {isSuperAdmin && (
-              <Link
-                href="/admin"
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/40 bg-white/10 px-3 py-1.5 text-sm font-medium text-white backdrop-blur transition hover:bg-white/20"
-              >
-                <Shield className="h-4 w-4" />
-                {t("nav.super_admin")}
-              </Link>
-            )}
-            {(isTeamAdmin || isSuperAdmin) && (
-              <Link
-                href={`/t/${slug}/admin`}
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/40 bg-white/10 px-3 py-1.5 text-sm font-medium text-white backdrop-blur transition hover:bg-white/20"
-              >
-                <Shield className="h-4 w-4" />
-                {t("nav.admin")}
-              </Link>
-            )}
+              {logoBlock}
+              <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-4">
+                {titleBlock}
+                {buttonsBlock}
+              </div>
+            </div>
+          </>
+        ) : (
+          <div
+            className="flex flex-wrap items-start justify-between gap-4"
+            style={{ position: "relative" }}
+          >
+            <div className="flex items-start gap-4">
+              {logoBlock}
+              {titleBlock}
+            </div>
+            {buttonsBlock}
           </div>
-        </div>
+        )}
       </section>
 
       {otherTeams.length > 0 && (

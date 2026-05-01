@@ -34,7 +34,7 @@ export const dict = {
       notifications: "Notifieringar",
       signout: "Logga ut",
       admin: "Admin",
-      super_admin: "Superadmin",
+      super_admin: "SA",
     },
     auth: {
       signin_title: "Logga in",
@@ -547,7 +547,7 @@ export const dict = {
       notifications: "Notifications",
       signout: "Sign out",
       admin: "Admin",
-      super_admin: "Super-admin",
+      super_admin: "SA",
     },
     auth: {
       signin_title: "Sign in",
