@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useState } from "react";
-import { Sparkles } from "@/components/icons";
+import { Shield, Sparkles } from "@/components/icons";
 import { redeemInvite, requestTeam } from "./actions";
 
 type Tab = "join" | "create";
@@ -22,22 +23,66 @@ type Strings = {
   team_name: string;
   team_name_ph: string;
   team_name_hint: string;
+  requester_role: string;
+  requester_role_hint: string;
+  requester_role_placeholder: string;
+  requester_role_coach: string;
+  requester_role_team_leader: string;
+  requester_role_parent: string;
+  requester_role_player: string;
+  requester_role_other: string;
+  request_note: string;
+  request_note_ph: string;
+  request_note_hint: string;
   submit_request: string;
   submit_request_pending: string;
   sign_out: string;
+  superadmin_banner_title: string;
+  superadmin_banner_body: string;
+  superadmin_link: string;
 };
 
 export default function OnboardingForms({
   email,
+  isSuperAdmin,
   strings,
 }: {
   email: string | null;
+  isSuperAdmin: boolean;
   strings: Strings;
 }) {
   const [tab, setTab] = useState<Tab>("join");
 
   return (
     <main className="mx-auto w-full max-w-lg px-4 py-10">
+      {isSuperAdmin && (
+        <section className="card card-pad mb-6">
+          <div className="flex items-start gap-3">
+            <span
+              className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-xl"
+              style={{
+                background:
+                  "color-mix(in oklab, var(--ui-primary) 14%, var(--surface))",
+                color: "color-mix(in oklab, var(--ui-primary) 75%, black)",
+              }}
+            >
+              <Shield className="h-5 w-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="font-semibold tracking-tight">
+                {strings.superadmin_banner_title}
+              </div>
+              <p className="text-sm text-muted">
+                {strings.superadmin_banner_body}
+              </p>
+              <Link href="/admin" className="btn btn-primary btn-sm mt-3">
+                {strings.superadmin_link}
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
       <div className="card card-pad-lg">
         <span className="pill pill-primary inline-flex items-center gap-1.5">
           <Sparkles className="h-3 w-3" /> hockeychallenge
@@ -153,6 +198,52 @@ function RequestForm({ strings }: { strings: Strings }) {
         hint={strings.team_name_hint}
         required
       />
+
+      <div>
+        <label htmlFor="requesterRole" className="label">
+          {strings.requester_role}
+        </label>
+        <select
+          id="requesterRole"
+          name="requesterRole"
+          required
+          defaultValue=""
+          className="input"
+        >
+          <option value="" disabled>
+            {strings.requester_role_placeholder}
+          </option>
+          <option value="coach">{strings.requester_role_coach}</option>
+          <option value="team_leader">
+            {strings.requester_role_team_leader}
+          </option>
+          <option value="parent">{strings.requester_role_parent}</option>
+          <option value="player">{strings.requester_role_player}</option>
+          <option value="other">{strings.requester_role_other}</option>
+        </select>
+        <p className="hint">{strings.requester_role_hint}</p>
+        {state?.errors?.requesterRole && (
+          <p className="field-error">{state.errors.requesterRole[0]}</p>
+        )}
+      </div>
+
+      <div>
+        <label htmlFor="requestNote" className="label">
+          {strings.request_note}
+        </label>
+        <textarea
+          id="requestNote"
+          name="requestNote"
+          placeholder={strings.request_note_ph}
+          rows={4}
+          maxLength={1000}
+          className="input"
+        />
+        <p className="hint">{strings.request_note_hint}</p>
+        {state?.errors?.requestNote && (
+          <p className="field-error">{state.errors.requestNote[0]}</p>
+        )}
+      </div>
 
       {state?.message && (
         <p className="pill pill-danger px-3 py-2 text-sm">{state.message}</p>

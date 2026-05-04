@@ -29,7 +29,9 @@ export default async function SuperAdminPage() {
   const [requests, orphaned, renames] = await Promise.all([
     supabase
       .from("team_creation_requests")
-      .select("id, proposed_name, requested_by, created_at")
+      .select(
+        "id, proposed_name, requested_by, requester_role, request_note, created_at",
+      )
       .eq("status", "pending")
       .order("created_at", { ascending: true }),
     supabase
@@ -88,45 +90,60 @@ export default async function SuperAdminPage() {
         </h2>
         {requests.data && requests.data.length > 0 ? (
           <ul className="space-y-3">
-            {requests.data.map((r) => (
-              <li
-                key={r.id}
-                className="card card-pad flex items-center justify-between gap-3"
-              >
-                <div className="min-w-0">
-                  <div className="font-semibold tracking-tight">
-                    {r.proposed_name}
+            {requests.data.map((r) => {
+              const roleLabel = r.requester_role
+                ? t(`admin.super.requester_role_${r.requester_role}`)
+                : null;
+              return (
+                <li key={r.id} className="card card-pad">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold tracking-tight">
+                        {r.proposed_name}
+                      </div>
+                      <div className="text-xs text-muted">
+                        {roleLabel ? (
+                          <>
+                            <span>{roleLabel}</span>
+                            {" · "}
+                          </>
+                        ) : null}
+                        {t("admin.super.requested", {
+                          date: new Date(r.created_at).toLocaleString(),
+                        })}
+                      </div>
+                      {r.request_note ? (
+                        <p className="mt-2 whitespace-pre-wrap rounded-md border border-[color:var(--border)] bg-[color:var(--surface-2)] p-2 text-sm">
+                          {r.request_note}
+                        </p>
+                      ) : null}
+                    </div>
+                    <div className="flex flex-shrink-0 gap-2">
+                      <form
+                        action={async () => {
+                          "use server";
+                          await approveTeamRequest(r.id);
+                        }}
+                      >
+                        <button className="btn btn-primary btn-sm">
+                          {t("admin.super.approve")}
+                        </button>
+                      </form>
+                      <form
+                        action={async () => {
+                          "use server";
+                          await rejectTeamRequest(r.id, null);
+                        }}
+                      >
+                        <button className="btn btn-secondary btn-sm">
+                          {t("admin.super.reject")}
+                        </button>
+                      </form>
+                    </div>
                   </div>
-                  <div className="text-xs text-muted">
-                    {t("admin.super.requested", {
-                      date: new Date(r.created_at).toLocaleString(),
-                    })}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <form
-                    action={async () => {
-                      "use server";
-                      await approveTeamRequest(r.id);
-                    }}
-                  >
-                    <button className="btn btn-primary btn-sm">
-                      {t("admin.super.approve")}
-                    </button>
-                  </form>
-                  <form
-                    action={async () => {
-                      "use server";
-                      await rejectTeamRequest(r.id, null);
-                    }}
-                  >
-                    <button className="btn btn-secondary btn-sm">
-                      {t("admin.super.reject")}
-                    </button>
-                  </form>
-                </div>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
         ) : (
           <p className="card card-pad text-sm text-muted">
