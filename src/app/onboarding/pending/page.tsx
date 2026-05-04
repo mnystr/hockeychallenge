@@ -1,7 +1,9 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getSessionState } from "@/lib/auth/session";
 import { getT } from "@/lib/i18n/server";
+import { Shield } from "@/components/icons";
 
 export default async function PendingPage() {
   const session = await getSessionState();
@@ -33,6 +35,34 @@ export default async function PendingPage() {
 
   return (
     <main className="mx-auto w-full max-w-lg px-4 py-10">
+      {session.kind === "no_memberships" && session.isSuperAdmin && (
+        <section className="card card-pad mb-6">
+          <div className="flex items-start gap-3">
+            <span
+              className="grid h-10 w-10 flex-shrink-0 place-items-center rounded-xl"
+              style={{
+                background:
+                  "color-mix(in oklab, var(--ui-primary) 14%, var(--surface))",
+                color: "color-mix(in oklab, var(--ui-primary) 75%, black)",
+              }}
+            >
+              <Shield className="h-5 w-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="font-semibold tracking-tight">
+                {t("onboarding.superadmin_banner_title")}
+              </div>
+              <p className="text-sm text-muted">
+                {t("onboarding.superadmin_banner_body")}
+              </p>
+              <Link href="/admin" className="btn btn-primary btn-sm mt-3">
+                {t("onboarding.superadmin_link")}
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
       <div className="card card-pad-lg">
         <h1 className="mb-2 text-3xl font-extrabold tracking-tight">
           {t("onboarding.pending_title")}

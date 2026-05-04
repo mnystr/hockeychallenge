@@ -74,6 +74,8 @@ export async function requestTeam(
 ): Promise<TeamRequestFormState> {
   const parsed = teamRequestSchema.safeParse({
     proposedName: formData.get("proposedName"),
+    requesterRole: formData.get("requesterRole"),
+    requestNote: formData.get("requestNote"),
   });
 
   if (!parsed.success) {
@@ -84,9 +86,12 @@ export async function requestTeam(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { error } = await supabase
-    .from("team_creation_requests")
-    .insert({ requested_by: user.id, proposed_name: parsed.data.proposedName });
+  const { error } = await supabase.from("team_creation_requests").insert({
+    requested_by: user.id,
+    proposed_name: parsed.data.proposedName,
+    requester_role: parsed.data.requesterRole,
+    request_note: parsed.data.requestNote,
+  });
 
   if (error) {
     return { message: error.message };

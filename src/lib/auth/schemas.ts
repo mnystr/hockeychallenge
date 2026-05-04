@@ -42,14 +42,38 @@ export type InviteRedeemFormState =
     }
   | undefined;
 
+export const TEAM_REQUEST_ROLES = [
+  "coach",
+  "team_leader",
+  "parent",
+  "player",
+  "other",
+] as const;
+
 export const teamRequestSchema = z.object({
   proposedName: z
     .string()
     .min(2, { error: "Team name must be at least 2 characters." })
     .max(80)
     .trim(),
+  requesterRole: z.enum(TEAM_REQUEST_ROLES, {
+    error: "Pick the role that best describes you.",
+  }),
+  requestNote: z
+    .string()
+    .trim()
+    .max(1000, { error: "Keep your note under 1000 characters." })
+    .optional()
+    .transform((v) => (v && v.length > 0 ? v : null)),
 });
 
 export type TeamRequestFormState =
-  | { errors?: { proposedName?: string[] }; message?: string }
+  | {
+      errors?: {
+        proposedName?: string[];
+        requesterRole?: string[];
+        requestNote?: string[];
+      };
+      message?: string;
+    }
   | undefined;

@@ -2,10 +2,12 @@
 
 Two environments, both auto-deployed:
 
-| Branch | Vercel deploy   | Supabase project    |
-| ------ | --------------- | ------------------- |
-| `main` | Production      | hockeychallenge     |
-| `dev`  | Preview (alias) | hockeychallenge-dev |
+| Branch | Vercel URL                                            | Supabase project    |
+| ------ | ----------------------------------------------------- | ------------------- |
+| `main` | https://hockeychallenge.vercel.app                    | hockeychallenge     |
+| `dev`  | https://hockeychallenge-git-dev-mrorning.vercel.app   | hockeychallenge-dev |
+
+The `<project>.vercel.app` URL is the canonical, public-facing one for prod. The longer `<project>-<team>.vercel.app` alias is gated by Vercel Authentication unless you've disabled it under Settings → Deployment Protection.
 
 Day-to-day: push to `dev` to ship to dev, merge `dev` → `main` to ship to prod. Migrations follow the code — a push that adds a migration runs it automatically against the matching environment via [.github/workflows/migrate.yml](.github/workflows/migrate.yml).
 
