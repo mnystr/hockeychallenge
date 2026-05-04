@@ -537,6 +537,14 @@ export const dict = {
       sign_out: "Logga ut",
       back_home: "← Hem",
     },
+    install: {
+      ios_title: "Lägg till på hemskärmen",
+      ios_body: "Tryck på dela-ikonen och välj ”Lägg till på hemskärmen”.",
+      android_title: "Installera hockeychallenge",
+      android_body: "Lägg till en app-ikon på hemskärmen för snabb åtkomst.",
+      install: "Installera",
+      dismiss: "Stäng",
+    },
   },
   en: {
     landing: {
@@ -1073,6 +1081,14 @@ export const dict = {
     common: {
       sign_out: "Sign out",
       back_home: "← Home",
+    },
+    install: {
+      ios_title: "Add to Home Screen",
+      ios_body: "Tap the share icon, then choose “Add to Home Screen”.",
+      android_title: "Install hockeychallenge",
+      android_body: "Add an app icon to your home screen for quick access.",
+      install: "Install",
+      dismiss: "Dismiss",
     },
   },
 } as const;

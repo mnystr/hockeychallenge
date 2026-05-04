@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#1e3a8a"/>
-  <g fill="#ffffff" stroke="#ffffff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M128 376 L168 336 L232 400 L192 440 Z" fill="#f59e0b" stroke="#f59e0b"/>
-    <path d="M168 336 L336 168" fill="none" stroke-width="28"/>
-    <path d="M336 168 L380 144 L392 156 L368 200 Z" fill="#e5e7eb" stroke="#e5e7eb"/>
-    <circle cx="384" cy="152" r="16" fill="#ffffff"/>
-  </g>
-  <circle cx="256" cy="256" r="40" fill="#ffffff" opacity="0.9"/>
-  <text x="256" y="275" text-anchor="middle" font-family="Inter,system-ui,sans-serif"
-        font-weight="800" font-size="48" fill="#1e3a8a">HC</text>
+  <rect width="512" height="512" fill="#1e3a8a"/>
+  <text x="256" y="278"
+        text-anchor="middle"
+        dominant-baseline="middle"
+        font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+        font-weight="900"
+        font-size="240"
+        letter-spacing="-8"
+        fill="#ffffff">HC</text>
+  <rect x="226" y="372" width="60" height="14" rx="6" fill="#f59e0b"/>
 </svg>

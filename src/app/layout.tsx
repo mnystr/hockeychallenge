@@ -2,7 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import InstallBanner from "@/components/InstallBanner";
 import { getLocale } from "@/lib/i18n/server";
+import { translate } from "@/lib/i18n/dict";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,6 +37,14 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const locale = await getLocale();
+  const installMessages = {
+    iosTitle: translate(locale, "install.ios_title"),
+    iosBody: translate(locale, "install.ios_body"),
+    androidTitle: translate(locale, "install.android_title"),
+    androidBody: translate(locale, "install.android_body"),
+    install: translate(locale, "install.install"),
+    dismiss: translate(locale, "install.dismiss"),
+  };
   return (
     <html
       lang={locale}
@@ -43,6 +53,7 @@ export default async function RootLayout({
       <body className="page-shell min-h-full bg-app">
         {children}
         <LanguageSwitcher />
+        <InstallBanner messages={installMessages} />
       </body>
     </html>
   );
