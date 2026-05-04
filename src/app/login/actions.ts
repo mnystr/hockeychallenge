@@ -41,10 +41,14 @@ export async function signUp(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signUp(parsed.data);
+  const { data, error } = await supabase.auth.signUp(parsed.data);
 
   if (error) {
     return { message: error.message };
+  }
+
+  if (!data.session) {
+    redirect("/auth/check-email");
   }
 
   redirect("/");

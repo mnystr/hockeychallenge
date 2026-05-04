@@ -19,6 +19,17 @@ type Messages = {
   dismiss: string;
 };
 
+function isMobileDevice(): boolean {
+  if (typeof window === "undefined") return false;
+  const uaData = (
+    window.navigator as unknown as { userAgentData?: { mobile?: boolean } }
+  ).userAgentData;
+  if (uaData && typeof uaData.mobile === "boolean") {
+    return uaData.mobile;
+  }
+  return /Mobi|Android/i.test(window.navigator.userAgent);
+}
+
 let cachedIosShouldShow: boolean | undefined;
 
 function detectIosShouldShow(): boolean {
@@ -69,6 +80,7 @@ export default function InstallBanner({ messages }: { messages: Messages }) {
   useEffect(() => {
     function onBip(e: Event) {
       e.preventDefault();
+      if (!isMobileDevice()) return;
       const dismissedAt = Number(
         window.localStorage.getItem(STORAGE_KEY) ?? "0",
       );

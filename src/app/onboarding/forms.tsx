@@ -23,6 +23,9 @@ type Strings = {
   team_name: string;
   team_name_ph: string;
   team_name_hint: string;
+  requester_name: string;
+  requester_name_ph: string;
+  requester_name_hint: string;
   requester_role: string;
   requester_role_hint: string;
   requester_role_placeholder: string;
@@ -191,6 +194,15 @@ function RequestForm({ strings }: { strings: Strings }) {
   return (
     <form action={action} className="space-y-4" noValidate>
       <Field
+        name="requesterName"
+        label={strings.requester_name}
+        placeholder={strings.requester_name_ph}
+        errors={state?.errors?.requesterName}
+        hint={strings.requester_name_hint}
+        autoComplete="name"
+        required
+      />
+      <Field
         name="proposedName"
         label={strings.team_name}
         placeholder={strings.team_name_ph}
@@ -269,6 +281,7 @@ type FieldProps = {
   type?: string;
   required?: boolean;
   autoCapitalize?: string;
+  autoComplete?: string;
   min?: number;
   max?: number;
 };
@@ -282,6 +295,7 @@ function Field({
   type = "text",
   required,
   autoCapitalize,
+  autoComplete,
   min,
   max,
 }: FieldProps) {
@@ -297,6 +311,7 @@ function Field({
         required={required}
         placeholder={placeholder}
         autoCapitalize={autoCapitalize}
+        autoComplete={autoComplete}
         min={min}
         max={max}
         className="input"

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { getT } from "@/lib/i18n/server";
 import { Shield, Users } from "@/components/icons";
 import {
@@ -30,7 +31,7 @@ export default async function SuperAdminPage() {
     supabase
       .from("team_creation_requests")
       .select(
-        "id, proposed_name, requested_by, requester_role, request_note, created_at",
+        "id, proposed_name, requested_by, requested_by_name, requester_role, request_note, created_at",
       )
       .eq("status", "pending")
       .order("created_at", { ascending: true }),
@@ -47,6 +48,20 @@ export default async function SuperAdminPage() {
       .eq("status", "pending")
       .order("created_at", { ascending: true }),
   ]);
+
+  const requesterEmails = new Map<string, string | null>();
+  const requesterIds = Array.from(
+    new Set((requests.data ?? []).map((r) => r.requested_by)),
+  );
+  if (requesterIds.length > 0) {
+    const admin = createServiceClient();
+    const lookups = await Promise.all(
+      requesterIds.map((id) => admin.auth.admin.getUserById(id)),
+    );
+    requesterIds.forEach((id, i) => {
+      requesterEmails.set(id, lookups[i].data.user?.email ?? null);
+    });
+  }
   type RenameRow = {
     id: string;
     team_id: string;
@@ -94,12 +109,31 @@ export default async function SuperAdminPage() {
               const roleLabel = r.requester_role
                 ? t(`admin.super.requester_role_${r.requester_role}`)
                 : null;
+              const email = requesterEmails.get(r.requested_by) ?? null;
+              const displayName =
+                r.requested_by_name?.trim() ||
+                t("admin.super.applicant_no_name");
               return (
                 <li key={r.id} className="card card-pad">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="font-semibold tracking-tight">
                         {r.proposed_name}
+                      </div>
+                      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm">
+                        <span className="font-medium">{displayName}</span>
+                        {email ? (
+                          <a
+                            href={`mailto:${email}`}
+                            className="text-ui-primary hover:underline"
+                          >
+                            {email}
+                          </a>
+                        ) : (
+                          <span className="text-muted-2">
+                            {t("admin.super.applicant_no_email")}
+                          </span>
+                        )}
                       </div>
                       <div className="text-xs text-muted">
                         {roleLabel ? (

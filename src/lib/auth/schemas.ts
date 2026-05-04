@@ -51,6 +51,11 @@ export const TEAM_REQUEST_ROLES = [
 ] as const;
 
 export const teamRequestSchema = z.object({
+  requesterName: z
+    .string()
+    .trim()
+    .min(2, { error: "Enter your name (at least 2 characters)." })
+    .max(80, { error: "Keep your name under 80 characters." }),
   proposedName: z
     .string()
     .min(2, { error: "Team name must be at least 2 characters." })
@@ -70,6 +75,7 @@ export const teamRequestSchema = z.object({
 export type TeamRequestFormState =
   | {
       errors?: {
+        requesterName?: string[];
         proposedName?: string[];
         requesterRole?: string[];
         requestNote?: string[];

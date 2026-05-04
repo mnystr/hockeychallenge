@@ -54,6 +54,12 @@ export const dict = {
       have_account: "Har du redan ett konto?",
       toggle_to_signup: "Skapa ett",
       toggle_to_signin: "Logga in",
+      check_email_title: "Kolla din e-post",
+      check_email_body:
+        "Vi har skickat en bekräftelselänk till adressen du angav. Klicka på länken för att aktivera kontot, sedan kan du logga in.",
+      check_email_hint:
+        "Hittar du inte mejlet? Kolla skräpposten eller försök logga in om du redan bekräftat tidigare.",
+      check_email_back_to_signin: "Tillbaka till inloggning",
     },
     onboarding: {
       welcome: "Välkommen",
@@ -73,6 +79,10 @@ export const dict = {
       team_name: "Lagnamn",
       team_name_ph: "t.ex. Östra stormen U14",
       team_name_hint: "En superadmin granskar innan laget skapas.",
+      requester_name: "Ditt namn",
+      requester_name_ph: "t.ex. Anna Andersson",
+      requester_name_hint:
+        "Visas för superadmin tillsammans med din e-post om de behöver höra av sig.",
       requester_role: "Din roll i laget",
       requester_role_hint:
         "Hjälper superadmin att förstå vem som ansöker.",
@@ -275,6 +285,8 @@ export const dict = {
         requester_role_parent: "Förälder",
         requester_role_player: "Spelare",
         requester_role_other: "Annat",
+        applicant_no_name: "Inget namn angivet",
+        applicant_no_email: "(ingen e-post)",
       },
       user_lookup: {
         title: "Användarsök",
@@ -597,6 +609,12 @@ export const dict = {
       have_account: "Already have an account?",
       toggle_to_signup: "Create one",
       toggle_to_signin: "Sign in",
+      check_email_title: "Check your email",
+      check_email_body:
+        "We sent a verification link to the address you signed up with. Click the link to activate your account, then come back and sign in.",
+      check_email_hint:
+        "Can't find it? Check your spam folder, or try signing in if you've already verified before.",
+      check_email_back_to_signin: "Back to sign in",
     },
     onboarding: {
       welcome: "Welcome",
@@ -616,6 +634,10 @@ export const dict = {
       team_name: "Team name",
       team_name_ph: "e.g. Eastside Storm U14",
       team_name_hint: "A super-admin will review before your team is created.",
+      requester_name: "Your name",
+      requester_name_ph: "e.g. Anna Andersson",
+      requester_name_hint:
+        "Shown to the super-admin alongside your email if they need to follow up.",
       requester_role: "Your role on the team",
       requester_role_hint:
         "Helps the super-admin understand who's asking.",
@@ -819,6 +841,8 @@ export const dict = {
         requester_role_parent: "Parent",
         requester_role_player: "Player",
         requester_role_other: "Other",
+        applicant_no_name: "No name provided",
+        applicant_no_email: "(no email)",
       },
       user_lookup: {
         title: "User lookup",
