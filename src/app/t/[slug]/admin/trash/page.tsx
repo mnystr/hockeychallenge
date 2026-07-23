@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireTeamAdmin } from "@/lib/auth/session";
 import { getT } from "@/lib/i18n/server";
-import { restoreChallenge, restoreLeaderboard } from "./actions";
+import { restoreChallenge, restoreLeaderboard, restoreLesson } from "./actions";
 
 export default async function TrashPage({
   params,
@@ -45,9 +45,17 @@ export default async function TrashPage({
     .not("deleted_at", "is", null)
     .order("deleted_at", { ascending: false });
 
+  const { data: deletedLessons } = await supabase
+    .from("lessons")
+    .select("id, title, deleted_at")
+    .eq("team_id", ctx.teamId)
+    .not("deleted_at", "is", null)
+    .order("deleted_at", { ascending: false });
+
   const anything =
     (deletedChallenges && deletedChallenges.length > 0) ||
-    (deletedLeaderboards && deletedLeaderboards.length > 0);
+    (deletedLeaderboards && deletedLeaderboards.length > 0) ||
+    (deletedLessons && deletedLessons.length > 0);
 
   const t = await getT();
 
@@ -87,6 +95,41 @@ export default async function TrashPage({
                   action={async () => {
                     "use server";
                     await restoreChallenge(slug, c.id);
+                  }}
+                >
+                  <button className="btn btn-secondary btn-sm">
+                    {t("admin.trash.restore")}
+                  </button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {deletedLessons && deletedLessons.length > 0 && (
+        <section className="mb-8">
+          <h2 className="section-title mb-3">{t("admin.trash.lessons")}</h2>
+          <ul className="space-y-2">
+            {deletedLessons.map((l) => (
+              <li
+                key={l.id}
+                className="card card-pad flex items-center justify-between gap-3"
+              >
+                <div className="min-w-0">
+                  <div className="font-semibold tracking-tight">
+                    {l.title || t("admin.trash.untitled")}
+                  </div>
+                  <div className="mt-0.5 text-xs text-muted">
+                    {t("admin.trash.deleted", {
+                      date: new Date(l.deleted_at!).toLocaleString(),
+                    })}
+                  </div>
+                </div>
+                <form
+                  action={async () => {
+                    "use server";
+                    await restoreLesson(slug, l.id);
                   }}
                 >
                   <button className="btn btn-secondary btn-sm">

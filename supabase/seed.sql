@@ -154,5 +154,23 @@ begin
   insert into team_invites (team_id, code, created_by, max_uses)
   values (v_team_id, 'DEMO-INVITE', admin1_id, null)
   on conflict (code) do nothing;
+
+  -- Demo lesson so the lessons tab is exercisable on a fresh checkout.
+  if not exists (select 1 from lessons where team_id = v_team_id) then
+    insert into lessons (team_id, title, body_md, read_points, status, publish_at, created_by)
+    values (
+      v_team_id,
+      'Off-season training 101',
+      '## Why summer reps matter'
+        || e'\n\nSmall daily sessions beat one big weekend push. Aim for **15 minutes a day** of stickhandling and shooting.'
+        || e'\n\nA bare YouTube link on its own line becomes an embedded video:'
+        || e'\n\nhttps://www.youtube.com/watch?v=jNQXAC9IVRw'
+        || e'\n\n- Golf ball for stickhandling on concrete\n- Heavy ball for wrist strength\n- Shooting pad to save your driveway',
+      10,
+      'published',
+      now(),
+      admin1_id
+    );
+  end if;
 end;
 $$;

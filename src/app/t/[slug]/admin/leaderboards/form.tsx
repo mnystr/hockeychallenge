@@ -10,6 +10,9 @@ import {
   CHALLENGE_CARD_THEMES,
   type ChallengeCardTheme,
 } from "@/lib/challenges/card-themes";
+import MarkdownEditor, {
+  type MarkdownEditorStrings,
+} from "@/components/MarkdownEditor";
 
 type Leaderboard = {
   id: string;
@@ -66,10 +69,12 @@ export default function LeaderboardForm({
   slug,
   leaderboard,
   strings,
+  editorStrings,
 }: {
   slug: string;
   leaderboard?: Leaderboard;
   strings: LeaderboardFormStrings;
+  editorStrings: MarkdownEditorStrings;
 }) {
   const action = leaderboard
     ? updateLeaderboard.bind(null, slug, leaderboard.id)
@@ -112,12 +117,11 @@ export default function LeaderboardForm({
         <label htmlFor="description" className="label">
           {strings.form_description}
         </label>
-        <textarea
-          id="description"
+        <MarkdownEditor
           name="description"
-          rows={3}
           defaultValue={leaderboard?.description ?? ""}
-          className="textarea"
+          rows={3}
+          strings={editorStrings}
         />
       </div>
 

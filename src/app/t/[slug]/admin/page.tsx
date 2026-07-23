@@ -29,6 +29,7 @@ export default async function TeamAdminDashboard({
     activeInvites,
     challengeCount,
     leaderboardCount,
+    lessonCount,
   ] = await Promise.all([
     supabase
       .from("memberships")
@@ -52,6 +53,11 @@ export default async function TeamAdminDashboard({
       .eq("team_id", ctx.teamId),
     supabase
       .from("leaderboards")
+      .select("id", { count: "exact", head: true })
+      .eq("team_id", ctx.teamId)
+      .is("deleted_at", null),
+    supabase
+      .from("lessons")
       .select("id", { count: "exact", head: true })
       .eq("team_id", ctx.teamId)
       .is("deleted_at", null),
@@ -105,6 +111,13 @@ export default async function TeamAdminDashboard({
           title={t("admin.dashboard.leaderboards")}
           body={t("admin.dashboard.total_count", {
             count: leaderboardCount.count ?? 0,
+          })}
+        />
+        <DashCard
+          href={`/t/${slug}/admin/lessons`}
+          title={t("admin.dashboard.lessons")}
+          body={t("admin.dashboard.total_count", {
+            count: lessonCount.count ?? 0,
           })}
         />
         <DashCard

@@ -16,6 +16,18 @@ export async function restoreChallenge(slug: string, id: string) {
   revalidatePath(`/t/${slug}/admin/challenges`);
 }
 
+export async function restoreLesson(slug: string, id: string) {
+  await requireTeamAdmin(slug);
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("lessons")
+    .update({ deleted_at: null })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/t/${slug}/admin/trash`);
+  revalidatePath(`/t/${slug}/admin/lessons`);
+}
+
 export async function restoreLeaderboard(slug: string, id: string) {
   await requireTeamAdmin(slug);
   const supabase = await createClient();

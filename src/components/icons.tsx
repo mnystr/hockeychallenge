@@ -281,6 +281,24 @@ export function User(props: IconProps) {
   );
 }
 
+export function BookOpen(props: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      {...props}
+    >
+      <path d="M2 4.5A1.5 1.5 0 0 1 3.5 3H8a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H3.5A1.5 1.5 0 0 1 2 15.5v-11Z" />
+      <path d="M22 4.5A1.5 1.5 0 0 0 20.5 3H16a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h5.5a1.5 1.5 0 0 0 1.5-1.5v-11Z" />
+    </svg>
+  );
+}
+
 export function Sparkles(props: IconProps) {
   return (
     <svg

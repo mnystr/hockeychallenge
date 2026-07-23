@@ -5,6 +5,7 @@ import { getT } from "@/lib/i18n/server";
 import { publicMediaUrl } from "@/lib/media/url";
 import {
   Bell,
+  BookOpen,
   Shield,
   ShieldStar,
   Target,
@@ -211,6 +212,12 @@ export default async function TeamPage({
           title={t("nav.leaderboards")}
           body={t("team.leaderboards_card")}
           tone="accent"
+        />
+        <NavCard
+          href={`/t/${slug}/lessons`}
+          icon={<BookOpen className="h-6 w-6" />}
+          title={t("nav.lessons")}
+          body={t("team.lessons_card")}
         />
         <NavCard
           href={`/t/${slug}/members`}

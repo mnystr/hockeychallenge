@@ -7,9 +7,11 @@ type Row = {
   teamId: string;
   teamName: string;
   email_new_challenge: boolean;
+  email_new_lesson: boolean;
   email_leaderboard_passed: boolean;
   email_approval_needed: boolean;
   in_app_new_challenge: boolean;
+  in_app_new_lesson: boolean;
   in_app_leaderboard_passed: boolean;
 };
 
@@ -20,6 +22,8 @@ type Strings = {
   saved: string;
   in_app_new_challenge: string;
   email_new_challenge: string;
+  in_app_new_lesson: string;
+  email_new_lesson: string;
   in_app_leaderboard_passed: string;
   email_leaderboard_passed: string;
   email_approval_needed: string;
@@ -58,6 +62,16 @@ export default function PreferencesForm({
               name={`${r.teamId}__email_new_challenge`}
               label={strings.email_new_challenge}
               defaultChecked={r.email_new_challenge}
+            />
+            <Checkbox
+              name={`${r.teamId}__in_app_new_lesson`}
+              label={strings.in_app_new_lesson}
+              defaultChecked={r.in_app_new_lesson}
+            />
+            <Checkbox
+              name={`${r.teamId}__email_new_lesson`}
+              label={strings.email_new_lesson}
+              defaultChecked={r.email_new_lesson}
             />
             <Checkbox
               name={`${r.teamId}__in_app_leaderboard_passed`}

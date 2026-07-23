@@ -78,6 +78,51 @@ export async function emailNewChallenge(params: {
 }
 
 /**
+ * Email every team member who has email_new_lesson=true when a lesson is
+ * published. Runs alongside the DB trigger that fans out in-app
+ * notifications. Failures are swallowed after logging so the publish
+ * action doesn't error out if the email provider is down.
+ */
+export async function emailNewLesson(params: {
+  lessonId: string;
+  teamSlug: string;
+  title: string;
+}) {
+  try {
+    const supabase = await createClient();
+
+    const { data: lesson } = await supabase
+      .from("lessons")
+      .select("team_id")
+      .eq("id", params.lessonId)
+      .maybeSingle();
+    if (!lesson) return;
+
+    const { data: recipients } = await supabase
+      .from("notification_preferences")
+      .select("user_id")
+      .eq("team_id", lesson.team_id)
+      .eq("email_new_lesson", true);
+    const userIds = Array.from(
+      new Set((recipients ?? []).map((r) => r.user_id)),
+    );
+
+    const emails = await resolveEmails(userIds);
+    if (emails.length === 0) return;
+
+    const url = `${baseUrl()}/t/${params.teamSlug}/lessons/${params.lessonId}`;
+
+    await sendEmail({
+      to: emails,
+      subject: `New lesson: ${params.title}`,
+      text: `A new lesson "${params.title}" was just published.\n\nRead it: ${url}\n\nManage email preferences: ${baseUrl()}/notifications`,
+    });
+  } catch (err) {
+    console.error("[email] emailNewLesson failed:", err);
+  }
+}
+
+/**
  * Email active team-admins of a team when something is pending review
  * (membership application, profile change request). Only admins with
  * email_approval_needed=true are emailed.
