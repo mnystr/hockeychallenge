@@ -6,6 +6,7 @@ import { publicMediaUrl } from "@/lib/media/url";
 import {
   Bell,
   BookOpen,
+  Check,
   Shield,
   ShieldStar,
   Target,
@@ -14,6 +15,14 @@ import {
   Users,
 } from "@/components/icons";
 import { setDefaultTeam } from "./actions";
+
+type FeedItem = {
+  kind: "challenge" | "lesson" | "leaderboard";
+  id: string;
+  title: string;
+  at: string | null;
+  done: boolean;
+};
 
 export default async function TeamPage({
   params,
@@ -69,6 +78,116 @@ export default async function TeamPage({
     }));
   const isDefault = appUser?.default_team_id === team.id;
   const t = await getT();
+
+  // ------------------------------------------------------------------
+  // Activity feed: latest published challenges + lessons and active
+  // leaderboards, merged and sorted by their publish/update time. RLS
+  // already scopes everything to what this viewer may see; the extra
+  // status/publish_at filters keep admin-visible drafts out of the feed.
+  // ------------------------------------------------------------------
+  const now = new Date();
+  const { data: audienceRows } = await supabase
+    .from("challenge_audience")
+    .select("challenge_id")
+    .eq("team_id", team.id);
+  const challengeIds = (audienceRows ?? []).map((r) => r.challenge_id);
+
+  const [{ data: feedChallenges }, { data: feedLessons }, { data: feedBoards }] =
+    await Promise.all([
+      challengeIds.length
+        ? supabase
+            .from("challenges")
+            .select("id, title, publish_at, updated_at")
+            .in("id", challengeIds)
+            .eq("status", "published")
+            .is("deleted_at", null)
+            .order("updated_at", { ascending: false })
+            .limit(6)
+        : Promise.resolve({
+            data: [] as Array<{
+              id: string;
+              title: string;
+              publish_at: string | null;
+              updated_at: string;
+            }>,
+          }),
+      supabase
+        .from("lessons")
+        .select("id, title, publish_at, updated_at")
+        .eq("team_id", team.id)
+        .eq("status", "published")
+        .is("deleted_at", null)
+        .order("updated_at", { ascending: false })
+        .limit(6),
+      supabase
+        .from("leaderboards")
+        .select("id, name, starts_at, updated_at")
+        .eq("team_id", team.id)
+        .eq("status", "active")
+        .is("deleted_at", null)
+        .order("updated_at", { ascending: false })
+        .limit(6),
+    ]);
+
+  const liveChallenges = (feedChallenges ?? []).filter(
+    (c) => !c.publish_at || new Date(c.publish_at) <= now,
+  );
+  const liveLessons = (feedLessons ?? []).filter(
+    (l) => !l.publish_at || new Date(l.publish_at) <= now,
+  );
+
+  const [{ data: feedCompletions }, { data: feedReads }] = await Promise.all([
+    liveChallenges.length
+      ? supabase
+          .from("challenge_completions")
+          .select("challenge_id")
+          .eq("user_id", user.id)
+          .in(
+            "challenge_id",
+            liveChallenges.map((c) => c.id),
+          )
+      : Promise.resolve({ data: [] as Array<{ challenge_id: string }> }),
+    liveLessons.length
+      ? supabase
+          .from("lesson_reads")
+          .select("lesson_id")
+          .eq("user_id", user.id)
+          .in(
+            "lesson_id",
+            liveLessons.map((l) => l.id),
+          )
+      : Promise.resolve({ data: [] as Array<{ lesson_id: string }> }),
+  ]);
+  const completedIds = new Set(
+    (feedCompletions ?? []).map((c) => c.challenge_id),
+  );
+  const readIds = new Set((feedReads ?? []).map((r) => r.lesson_id));
+
+  const feed: FeedItem[] = [
+    ...liveChallenges.map((c) => ({
+      kind: "challenge" as const,
+      id: c.id,
+      title: c.title,
+      at: c.publish_at ?? c.updated_at,
+      done: completedIds.has(c.id),
+    })),
+    ...liveLessons.map((l) => ({
+      kind: "lesson" as const,
+      id: l.id,
+      title: l.title,
+      at: l.publish_at ?? l.updated_at,
+      done: readIds.has(l.id),
+    })),
+    ...(feedBoards ?? []).map((b) => ({
+      kind: "leaderboard" as const,
+      id: b.id,
+      title: b.name,
+      at: b.starts_at ?? b.updated_at,
+      done: false,
+    })),
+  ]
+    .sort((a, b) => (b.at ?? "").localeCompare(a.at ?? ""))
+    .slice(0, 6);
 
   const logoBlock = logoUrl ? (
     // eslint-disable-next-line @next/next/no-img-element
@@ -232,6 +351,80 @@ export default async function TeamPage({
           body={t("team.profile_card")}
         />
       </nav>
+
+      {feed.length > 0 && (
+        <section className="mt-8">
+          <h2 className="section-title mb-3">{t("team.feed_title")}</h2>
+          <ul className="space-y-2">
+            {feed.map((item) => {
+              const href =
+                item.kind === "challenge"
+                  ? `/t/${slug}/challenges/${item.id}`
+                  : item.kind === "lesson"
+                    ? `/t/${slug}/lessons/${item.id}`
+                    : `/t/${slug}/leaderboards/${item.id}`;
+              const kindLabel =
+                item.kind === "challenge"
+                  ? t("team.feed_kind_challenge")
+                  : item.kind === "lesson"
+                    ? t("team.feed_kind_lesson")
+                    : t("team.feed_kind_leaderboard");
+              const doneLabel =
+                item.kind === "challenge"
+                  ? t("challenges.complete_badge")
+                  : t("lessons.read_badge");
+              return (
+                <li key={`${item.kind}-${item.id}`}>
+                  <Link
+                    href={href}
+                    className="card card-pad card-hover card-link flex items-center gap-3"
+                  >
+                    <span
+                      className="grid h-9 w-9 shrink-0 place-items-center rounded-xl"
+                      style={{
+                        background:
+                          "color-mix(in oklab, var(--ui-primary) 14%, var(--surface))",
+                        color:
+                          "color-mix(in oklab, var(--ui-primary) 75%, black)",
+                      }}
+                    >
+                      {item.kind === "challenge" ? (
+                        <Target className="h-5 w-5" />
+                      ) : item.kind === "lesson" ? (
+                        <BookOpen className="h-5 w-5" />
+                      ) : (
+                        <Trophy className="h-5 w-5" />
+                      )}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-semibold tracking-tight">
+                        {item.title}
+                      </span>
+                      <span className="mt-0.5 block text-xs text-muted">
+                        {kindLabel}
+                        {item.at &&
+                          ` · ${new Date(item.at).toLocaleDateString()}`}
+                      </span>
+                    </span>
+                    {item.done && (
+                      <span
+                        className="inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wider"
+                        style={{
+                          background: "var(--success-bg)",
+                          color: "var(--success-fg)",
+                        }}
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                        {doneLabel}
+                      </span>
+                    )}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       <div className="mt-10 flex items-center justify-between text-xs text-muted-2">
         <Link href="/settings/data" className="hover:underline">

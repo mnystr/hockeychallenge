@@ -30,6 +30,28 @@ export default async function LessonsAdminListPage({
     .is("deleted_at", null)
     .order("updated_at", { ascending: false });
 
+  // Read stats: how many active members have read each lesson.
+  const lessonIds = (lessons ?? []).map((l) => l.id);
+  const [activeMembers, { data: reads }] = await Promise.all([
+    supabase
+      .from("memberships")
+      .select("id", { count: "exact", head: true })
+      .eq("team_id", ctx.teamId)
+      .eq("status", "active")
+      .is("deleted_at", null),
+    lessonIds.length
+      ? supabase
+          .from("lesson_reads")
+          .select("lesson_id")
+          .in("lesson_id", lessonIds)
+      : Promise.resolve({ data: [] as Array<{ lesson_id: string }> }),
+  ]);
+  const memberCount = activeMembers.count ?? 0;
+  const readsByLesson = new Map<string, number>();
+  for (const r of reads ?? []) {
+    readsByLesson.set(r.lesson_id, (readsByLesson.get(r.lesson_id) ?? 0) + 1);
+  }
+
   const t = await getT();
 
   return (
@@ -76,6 +98,11 @@ export default async function LessonsAdminListPage({
                     {l.read_points > 0 &&
                       ` · ${t("admin.lessons.read_points_short", {
                         points: l.read_points,
+                      })}`}
+                    {l.status === "published" &&
+                      ` · ${t("admin.lessons.read_count", {
+                        reads: readsByLesson.get(l.id) ?? 0,
+                        members: memberCount,
                       })}`}
                   </div>
                 </div>

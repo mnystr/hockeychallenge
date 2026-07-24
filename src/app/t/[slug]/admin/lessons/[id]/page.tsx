@@ -35,26 +35,49 @@ export default async function EditLessonPage({
 
   if (!lesson) notFound();
 
-  // Everything needed for the related-content manager: current links plus
-  // the team's challenges and leaderboards to offer in the add-select.
-  const [{ data: links }, { data: audienceRows }, { data: leaderboards }] =
-    await Promise.all([
-      supabase
-        .from("lesson_links")
-        .select("id, challenge_id, leaderboard_id, position")
-        .eq("lesson_id", id)
-        .order("position", { ascending: true }),
-      supabase
-        .from("challenge_audience")
-        .select("challenge_id")
-        .eq("team_id", ctx.teamId),
-      supabase
-        .from("leaderboards")
-        .select("id, name")
-        .eq("team_id", ctx.teamId)
-        .is("deleted_at", null)
-        .order("name", { ascending: true }),
-    ]);
+  // Everything needed for the related-content manager (current links plus
+  // the team's challenges and leaderboards to offer in the add-select) and
+  // the read-stats section (who has read vs. not).
+  const [
+    { data: links },
+    { data: audienceRows },
+    { data: leaderboards },
+    { data: reads },
+    { data: memberRows },
+    { data: profileRows },
+  ] = await Promise.all([
+    supabase
+      .from("lesson_links")
+      .select("id, challenge_id, leaderboard_id, position")
+      .eq("lesson_id", id)
+      .order("position", { ascending: true }),
+    supabase
+      .from("challenge_audience")
+      .select("challenge_id")
+      .eq("team_id", ctx.teamId),
+    supabase
+      .from("leaderboards")
+      .select("id, name")
+      .eq("team_id", ctx.teamId)
+      .is("deleted_at", null)
+      .order("name", { ascending: true }),
+    supabase
+      .from("lesson_reads")
+      .select("user_id, read_at, points_awarded")
+      .eq("lesson_id", id)
+      .order("read_at", { ascending: true }),
+    supabase
+      .from("memberships")
+      .select("user_id")
+      .eq("team_id", ctx.teamId)
+      .eq("status", "active")
+      .is("deleted_at", null),
+    supabase
+      .from("profiles")
+      .select("user_id, display_name")
+      .eq("team_id", ctx.teamId)
+      .is("deleted_at", null),
+  ]);
 
   const challengeIds = (audienceRows ?? []).map((r) => r.challenge_id);
   const { data: challenges } = challengeIds.length
@@ -83,6 +106,28 @@ export default async function EditLessonPage({
   const availableLeaderboards = (leaderboards ?? []).filter(
     (l) => !linkedLeaderboardIds.has(l.id),
   );
+
+  // Read stats: split active members into read / not-read. Team-admins
+  // see full display names here (same as the roster admin view).
+  const nameByUser = new Map(
+    (profileRows ?? []).map((p) => [p.user_id, p.display_name]),
+  );
+  const readByUser = new Map(
+    (reads ?? []).map((r) => [r.user_id, r]),
+  );
+  const activeUserIds = (memberRows ?? []).map((m) => m.user_id);
+  const readers = activeUserIds
+    .filter((uid) => readByUser.has(uid))
+    .map((uid) => ({
+      userId: uid,
+      name: nameByUser.get(uid) ?? "—",
+      read: readByUser.get(uid)!,
+    }))
+    .sort((a, b) => a.read.read_at.localeCompare(b.read.read_at));
+  const nonReaders = activeUserIds
+    .filter((uid) => !readByUser.has(uid))
+    .map((uid) => ({ userId: uid, name: nameByUser.get(uid) ?? "—" }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const t = await getT();
 
@@ -242,6 +287,64 @@ export default async function EditLessonPage({
           </button>
         </form>
       )}
+
+      <hr className="my-10 border-[color:var(--border)]" />
+
+      <h2 className="section-title mb-1">{t("admin.lessons.readers_title")}</h2>
+      <p className="mb-4 text-sm text-muted">
+        {t("admin.lessons.read_count", {
+          reads: readers.length,
+          members: activeUserIds.length,
+        })}
+      </p>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="card card-pad">
+          <h3 className="mb-2 text-sm font-bold tracking-tight">
+            {t("admin.lessons.readers_read", { count: readers.length })}
+          </h3>
+          {readers.length > 0 ? (
+            <ul className="space-y-1.5 text-sm">
+              {readers.map((r) => (
+                <li
+                  key={r.userId}
+                  className="flex items-center justify-between gap-3"
+                >
+                  <span className="truncate font-medium">{r.name}</span>
+                  <span className="shrink-0 text-xs text-muted">
+                    {new Date(r.read.read_at).toLocaleDateString()}
+                    {r.read.points_awarded > 0 &&
+                      ` · ${r.read.points_awarded} p`}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted">
+              {t("admin.lessons.readers_none")}
+            </p>
+          )}
+        </div>
+
+        <div className="card card-pad">
+          <h3 className="mb-2 text-sm font-bold tracking-tight">
+            {t("admin.lessons.readers_unread", { count: nonReaders.length })}
+          </h3>
+          {nonReaders.length > 0 ? (
+            <ul className="space-y-1.5 text-sm">
+              {nonReaders.map((r) => (
+                <li key={r.userId} className="truncate font-medium">
+                  {r.name}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted">
+              {t("admin.lessons.readers_all")}
+            </p>
+          )}
+        </div>
+      </div>
     </main>
   );
 }
