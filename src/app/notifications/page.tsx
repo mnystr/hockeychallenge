@@ -24,7 +24,7 @@ export default async function NotificationsPage() {
       supabase
         .from("notification_preferences")
         .select(
-          "team_id, email_new_challenge, email_leaderboard_passed, email_approval_needed, in_app_new_challenge, in_app_leaderboard_passed",
+          "team_id, email_new_challenge, email_new_lesson, email_leaderboard_passed, email_approval_needed, in_app_new_challenge, in_app_new_lesson, in_app_leaderboard_passed",
         )
         .eq("user_id", user.id),
       supabase
@@ -163,9 +163,11 @@ export default async function NotificationsPage() {
             teamId: p.team_id,
             teamName: teamsById.get(p.team_id)?.name ?? "Unknown",
             email_new_challenge: p.email_new_challenge,
+            email_new_lesson: p.email_new_lesson,
             email_leaderboard_passed: p.email_leaderboard_passed,
             email_approval_needed: p.email_approval_needed,
             in_app_new_challenge: p.in_app_new_challenge,
+            in_app_new_lesson: p.in_app_new_lesson,
             in_app_leaderboard_passed: p.in_app_leaderboard_passed,
           }))}
           strings={{
@@ -175,6 +177,8 @@ export default async function NotificationsPage() {
             saved: t("notifications.prefs_saved"),
             in_app_new_challenge: t("notifications.pref_in_app_new_challenge"),
             email_new_challenge: t("notifications.pref_email_new_challenge"),
+            in_app_new_lesson: t("notifications.pref_in_app_new_lesson"),
+            email_new_lesson: t("notifications.pref_email_new_lesson"),
             in_app_leaderboard_passed: t(
               "notifications.pref_in_app_leaderboard_passed",
             ),
@@ -199,6 +203,7 @@ function renderTitle(
   const key = `notifications.titles.${n.kind}`;
   switch (n.kind) {
     case "new_challenge":
+    case "new_lesson":
       return t(key, { title: String(n.payload?.title ?? "(untitled)") });
     case "leaderboard_passed":
       return t(key, {
@@ -223,6 +228,8 @@ function renderLink(
   switch (n.kind) {
     case "new_challenge":
       return `/t/${slug}/challenges/${String(n.payload?.challenge_id ?? "")}`;
+    case "new_lesson":
+      return `/t/${slug}/lessons/${String(n.payload?.lesson_id ?? "")}`;
     case "approval_needed":
       return `/t/${slug}/admin/approvals`;
     case "team_orphaned":

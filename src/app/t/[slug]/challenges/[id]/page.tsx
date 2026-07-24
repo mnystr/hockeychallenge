@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import Markdown from "@/components/Markdown";
 import { createClient } from "@/lib/supabase/server";
 import { getT } from "@/lib/i18n/server";
 import TaskProgress from "./task-progress";
@@ -181,11 +180,7 @@ export default async function ChallengeDetailPage({
 
       {challenge.description_md && (
         <div className="card card-pad mb-6">
-          <article className="md">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {challenge.description_md}
-            </ReactMarkdown>
-          </article>
+          <Markdown>{challenge.description_md}</Markdown>
         </div>
       )}
 
@@ -237,10 +232,8 @@ export default async function ChallengeDetailPage({
                       </div>
                     </div>
                     {task.description_md && (
-                      <div className="md mt-2 text-sm">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                          {task.description_md}
-                        </ReactMarkdown>
+                      <div className="mt-2 text-sm">
+                        <Markdown>{task.description_md}</Markdown>
                       </div>
                     )}
                     {task.points !== null && (

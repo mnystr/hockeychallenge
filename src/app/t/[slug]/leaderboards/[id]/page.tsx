@@ -8,6 +8,7 @@ import {
 import { getT } from "@/lib/i18n/server";
 import StandaloneEntryForm from "./entry-form";
 import { ChevronLeft, Trophy, Medal, Star } from "@/components/icons";
+import Markdown from "@/components/Markdown";
 import TeamShell from "@/components/TeamShell";
 
 type Row = {
@@ -179,9 +180,9 @@ export default async function LeaderboardDetailPage({
               </p>
             )}
             {board.description && (
-              <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/85">
-                {board.description}
-              </p>
+              <div className="mt-3 max-w-xl text-sm leading-relaxed">
+                <Markdown invert>{board.description}</Markdown>
+              </div>
             )}
           </div>
           <Trophy

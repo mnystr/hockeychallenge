@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireTeamAdmin } from "@/lib/auth/session";
 import { getT } from "@/lib/i18n/server";
+import { markdownEditorStrings } from "@/lib/i18n/editor-strings";
 import LeaderboardForm from "../form";
 import {
   archiveLeaderboardAction,
@@ -118,6 +119,7 @@ export default async function EditLeaderboardPage({
         slug={slug}
         leaderboard={leaderboard}
         strings={formStrings}
+        editorStrings={markdownEditorStrings(t)}
       />
     </main>
   );

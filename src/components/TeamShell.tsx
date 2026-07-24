@@ -4,6 +4,7 @@ import { getT } from "@/lib/i18n/server";
 import { publicMediaUrl } from "@/lib/media/url";
 import {
   Bell,
+  BookOpen,
   Shield,
   ShieldStar,
   Target,
@@ -15,6 +16,7 @@ import {
 type ActiveKey =
   | "challenges"
   | "leaderboards"
+  | "lessons"
   | "members"
   | "profile"
   | null;
@@ -159,6 +161,12 @@ export default async function TeamShell({
           icon={<Trophy className="h-4 w-4" />}
           label={t("nav.leaderboards")}
           active={active === "leaderboards"}
+        />
+        <NavTab
+          href={`/t/${slug}/lessons`}
+          icon={<BookOpen className="h-4 w-4" />}
+          label={t("nav.lessons")}
+          active={active === "lessons"}
         />
         <NavTab
           href={`/t/${slug}/members`}

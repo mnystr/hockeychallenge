@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireTeamAdmin } from "@/lib/auth/session";
 import { getT } from "@/lib/i18n/server";
+import { markdownEditorStrings } from "@/lib/i18n/editor-strings";
 import ChallengeForm from "./challenge-form";
 import TaskList from "./task-list";
 import ChallengeStatusButtons from "./status-buttons";
@@ -125,7 +126,12 @@ export default async function EditChallengePage({
         />
       </div>
 
-      <ChallengeForm slug={slug} challenge={challenge} strings={formStrings} />
+      <ChallengeForm
+        slug={slug}
+        challenge={challenge}
+        strings={formStrings}
+        editorStrings={markdownEditorStrings(t)}
+      />
 
       <hr className="my-10 border-[color:var(--border)]" />
 

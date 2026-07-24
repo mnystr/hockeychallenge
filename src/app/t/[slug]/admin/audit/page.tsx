@@ -30,6 +30,8 @@ const ACTION_KEYS: Record<string, string> = {
   "challenge.created": "challenge_created",
   "challenge.completed": "challenge_completed",
   "challenge.uncompleted": "challenge_regressed",
+  "lesson.created": "lesson_created",
+  "lesson.read": "lesson_read",
   "leaderboard.archived": "leaderboard_archived",
   "team_change.submitted": "team_change_submitted",
   "team_change.approved": "team_change_approved",

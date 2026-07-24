@@ -7,6 +7,9 @@ import {
   CHALLENGE_CARD_THEMES,
   type ChallengeCardTheme,
 } from "@/lib/challenges/card-themes";
+import MarkdownEditor, {
+  type MarkdownEditorStrings,
+} from "@/components/MarkdownEditor";
 
 type Challenge = {
   id: string;
@@ -67,10 +70,12 @@ export default function ChallengeForm({
   slug,
   challenge,
   strings,
+  editorStrings,
 }: {
   slug: string;
   challenge: Challenge;
   strings: ChallengeFormStrings;
+  editorStrings: MarkdownEditorStrings;
 }) {
   const bound = updateChallenge.bind(null, slug, challenge.id);
   const [state, action, pending] = useActionState<
@@ -113,12 +118,11 @@ export default function ChallengeForm({
         <label htmlFor="description_md" className="label">
           {strings.description}
         </label>
-        <textarea
-          id="description_md"
+        <MarkdownEditor
           name="description_md"
-          rows={8}
           defaultValue={challenge.description_md}
-          className="textarea input-mono"
+          rows={8}
+          strings={editorStrings}
         />
         <p className="hint">{strings.description_hint}</p>
         {state?.errors?.description_md && (

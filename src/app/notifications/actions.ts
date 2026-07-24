@@ -25,9 +25,11 @@ export async function markOneRead(id: string) {
 type PrefUpdate = {
   team_id: string;
   email_new_challenge: boolean;
+  email_new_lesson: boolean;
   email_leaderboard_passed: boolean;
   email_approval_needed: boolean;
   in_app_new_challenge: boolean;
+  in_app_new_lesson: boolean;
   in_app_leaderboard_passed: boolean;
 };
 
@@ -51,9 +53,11 @@ export async function updatePreferences(
       row = {
         team_id: teamId,
         email_new_challenge: false,
+        email_new_lesson: false,
         email_leaderboard_passed: false,
         email_approval_needed: false,
         in_app_new_challenge: false,
+        in_app_new_lesson: false,
         in_app_leaderboard_passed: false,
       };
       updates.set(teamId, row);
@@ -69,9 +73,11 @@ export async function updatePreferences(
       .from("notification_preferences")
       .update({
         email_new_challenge: row.email_new_challenge,
+        email_new_lesson: row.email_new_lesson,
         email_leaderboard_passed: row.email_leaderboard_passed,
         email_approval_needed: row.email_approval_needed,
         in_app_new_challenge: row.in_app_new_challenge,
+        in_app_new_lesson: row.in_app_new_lesson,
         in_app_leaderboard_passed: row.in_app_leaderboard_passed,
       })
       .eq("user_id", user.id)

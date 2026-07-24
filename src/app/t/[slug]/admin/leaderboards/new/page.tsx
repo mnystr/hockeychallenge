@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { requireTeamAdmin } from "@/lib/auth/session";
 import { getT } from "@/lib/i18n/server";
+import { markdownEditorStrings } from "@/lib/i18n/editor-strings";
 import LeaderboardForm from "../form";
 
 export default async function NewLeaderboardPage({
@@ -64,7 +65,11 @@ export default async function NewLeaderboardPage({
       <h1 className="mb-6 text-3xl font-extrabold tracking-tight">
         {t("admin.leaderboards.new_leaderboard")}
       </h1>
-      <LeaderboardForm slug={slug} strings={formStrings} />
+      <LeaderboardForm
+        slug={slug}
+        strings={formStrings}
+        editorStrings={markdownEditorStrings(t)}
+      />
     </main>
   );
 }
